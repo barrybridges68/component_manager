@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+
+{% block title %}Components - Component Stock Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Components</h1>
+            <a href="{% url 'components:component_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Component
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <form method="get" class="d-flex">
+            <input type="text" name="search" class="form-control me-2" 
+                   placeholder="Search components..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <form method="get" class="d-flex">
+            <select name="status" class="form-control me-2">
+                <option value="">All Status</option>
+                <option value="in_stock" {% if status_filter == 'in_stock' %}selected{% endif %}>In Stock</option>
+                <option value="low_stock" {% if status_filter == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                <option value="out_of_stock" {% if status_filter == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+            </select>
+            <input type="hidden" name="search" value="{{ search_query }}">
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="bi bi-funnel"></i> Filter
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if page_obj %}
+                    <form id="bulkDeleteForm" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="bulk_delete" value="1">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped table-hover">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAll" class="form-check-input">
+                                    </th>
+                                    <th>
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=description&order={% if current_sort == 'description' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                            Description
+                                            {% if current_sort == 'description' %}
+                                                {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=value&order={% if current_sort == 'value' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                            Value
+                                            {% if current_sort == 'value' %}
+                                                {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=manufacturer&order={% if current_sort == 'manufacturer' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                            Manufacturer
+                                            {% if current_sort == 'manufacturer' %}
+                                                {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=supplier_name&order={% if current_sort == 'supplier_name' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                            Supplier
+                                            {% if current_sort == 'supplier_name' %}
+                                                {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=supplier_part_number&order={% if current_sort == 'supplier_part_number' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                            Supplier Part #
+                                            {% if current_sort == 'supplier_part_number' %}
+                                                {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=cost&order={% if current_sort == 'cost' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                            Unit Cost
+                                            {% if current_sort == 'cost' %}
+                                                {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=quantity_in_stock&order={% if current_sort == 'quantity_in_stock' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                            Stock
+                                            {% if current_sort == 'quantity_in_stock' %}
+                                                {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>Status</th>
+                                    <th>
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=location&order={% if current_sort == 'location' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                            Location
+                                            {% if current_sort == 'location' %}
+                                                {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for component in page_obj %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="component_ids" value="{{ component.id }}" class="form-check-input component-checkbox">
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'components:component_detail' component.pk %}" class="text-decoration-none">
+                                            <strong>{{ component.description }}</strong>
+                                        </a>
+                                    </td>
+                                    <td>{{ component.value|default:"-" }}</td>
+                                    <td>{{ component.manufacturer|default:"-" }}</td>
+                                    <td>{{ component.supplier_name|default:"-" }}</td>
+                                    <td>{{ component.supplier_part_number|default:"-" }}</td>
+                                    <td>
+                                        {% if component.cost %}
+                                            £{{ component.cost }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ component.quantity_in_stock }}</td>
+                                    <td>
+                                        {% if component.stock_status == "Out of Stock" %}
+                                            <span class="badge bg-danger">{{ component.stock_status }}</span>
+                                        {% elif component.stock_status == "Low Stock" %}
+                                            <span class="badge bg-warning text-dark">{{ component.stock_status }}</span>
+                                        {% else %}
+                                            <span class="badge bg-success">{{ component.stock_status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ component.location|default:"-" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'components:component_detail' component.pk %}" 
+                                               class="btn btn-outline-info" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'components:component_update' component.pk %}" 
+                                               class="btn btn-outline-warning" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'components:component_delete' component.pk %}" 
+                                               class="btn btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        </div>
+                    </form>
+
+                    <!-- Bulk Actions -->
+                    {% if page_obj %}
+                    <div class="mt-3 border-top pt-3">
+                        <div class="d-flex align-items-center">
+                            <span class="me-3">Selected: <span id="selectedCount">0</span> components</span>
+                            <button type="button" class="btn btn-outline-danger" id="bulkDeleteBtn" disabled>
+                                <i class="bi bi-trash"></i> Delete Selected
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Pagination and Per Page Controls -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        {% if page_obj.has_other_pages %}
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center mb-0">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_order %}&order={{ current_order }}{% endif %}&per_page={{ per_page }}">Previous</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if page_obj.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_order %}&order={{ current_order }}{% endif %}&per_page={{ per_page }}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}&per_page={{ per_page }}">Next</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                        <div>
+                            <form method="get" class="d-inline">
+                                <select name="per_page" class="form-select form-select-sm" style="width: auto; display: inline-block;" onchange="this.form.submit()">
+                                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10 per page</option>
+                                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20 per page</option>
+                                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50 per page</option>
+                                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100 per page</option>
+                                </select>
+                                <input type="hidden" name="search" value="{{ search_query }}">
+                                <input type="hidden" name="status" value="{{ status_filter }}">
+                                <input type="hidden" name="sort" value="{{ current_sort }}">
+                                <input type="hidden" name="order" value="{{ current_order }}">
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 4rem; color: #6c757d;"></i>
+                        <h4 class="mt-3 text-muted">No components found</h4>
+                        {% if search_query %}
+                            <p class="text-muted">No components match your search "{{ search_query }}"</p>
+                            <a href="{% url 'components:component_list' %}" class="btn btn-secondary">Clear Search</a>
+                        {% else %}
+                            <p class="text-muted">Get started by adding your first component</p>
+                            <a href="{% url 'components:component_create' %}" class="btn btn-primary">Add Component</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select all functionality
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.component-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+    }
+
+    // Individual checkbox functionality
+    document.querySelectorAll('.component-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+
+    function updateSelectedCount() {
+        const checkedBoxes = document.querySelectorAll('.component-checkbox:checked');
+        const count = checkedBoxes.length;
+        const selectedCountElement = document.getElementById('selectedCount');
+        if (selectedCountElement) {
+            selectedCountElement.textContent = count;
+        }
+        
+        // Enable/disable bulk action buttons
+        const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+        
+        if (bulkDeleteBtn) {
+            if (count > 0) {
+                bulkDeleteBtn.disabled = false;
+            } else {
+                bulkDeleteBtn.disabled = true;
+            }
+        }
+        
+        // Update select all checkbox state
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const totalCheckboxes = document.querySelectorAll('.component-checkbox').length;
+        
+        if (selectAllCheckbox) {
+            if (count === 0) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = false;
+            } else if (count === totalCheckboxes) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = true;
+            } else {
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+    }
+
+    // Bulk actions
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('.component-checkbox:checked');
+            if (checkedBoxes.length > 0) {
+                const count = checkedBoxes.length;
+                if (confirm(`Are you sure you want to delete ${count} selected component${count > 1 ? 's' : ''}?`)) {
+                    document.getElementById('bulkDeleteForm').submit();
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

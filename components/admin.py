@@ -1,0 +1,67 @@
+from django.contrib import admin
+from .models import Component
+
+
+@admin.register(Component)
+class ComponentAdmin(admin.ModelAdmin):
+    """Admin interface for Component model."""
+    
+    list_display = [
+        'description',
+        'value',
+        'manufacturer',
+        'supplier_name',
+        'supplier_part_number',
+        'cost',
+        'quantity_in_stock',
+        'stock_status',
+        'location',
+        'date_added'
+    ]
+    
+    list_filter = [
+        'manufacturer',
+        'supplier_name',
+        'date_added',
+        'date_modified'
+    ]
+    
+    search_fields = [
+        'description',
+        'value',
+        'manufacturer',
+        'supplier_name',
+        'supplier_part_number',
+        'location'
+    ]
+    
+    readonly_fields = ['date_added', 'date_modified', 'stock_status']
+    
+    fieldsets = (
+        ('Component Information', {
+            'fields': ('description', 'value', 'manufacturer', 'supplier_name', 'supplier_part_number', 'cost')
+        }),
+        ('Stock Management', {
+            'fields': ('quantity_in_stock', 'minimum_stock_level', 'location')
+        }),
+        ('Additional Information', {
+            'fields': ('notes',)
+        }),
+        ('Metadata', {
+            'fields': ('date_added', 'date_modified', 'stock_status'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def stock_status(self, obj):
+        """Display stock status with color coding."""
+        status = obj.stock_status
+        if status == "Out of Stock":
+            return f'<span style="color: red; font-weight: bold;">{status}</span>'
+        elif status == "Low Stock":
+            return f'<span style="color: orange; font-weight: bold;">{status}</span>'
+        else:
+            return f'<span style="color: green;">{status}</span>'
+    
+    stock_status.allow_tags = True
+    stock_status.short_description = 'Stock Status'

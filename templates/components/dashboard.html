@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Component Stock Management{% endblock %}
+
+{% block content %}
+<style>
+.clickable-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+}
+.clickable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+.clickable-card:hover .card {
+    border-color: rgba(255,255,255,0.3);
+}
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Dashboard</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Total Components</h5>
+                        <h2>{{ total_components }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-cpu-fill" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Total Stock Cost</h5>
+                        <h2>£{{ total_stock_cost|floatformat:2 }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-currency-pound" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <a href="{% url 'components:component_list' %}?status=low_stock" class="text-decoration-none clickable-card">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Low Stock</h5>
+                            <h2>{{ low_stock }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-md-3">
+        <a href="{% url 'components:component_list' %}?status=out_of_stock" class="text-decoration-none clickable-card">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Out of Stock</h5>
+                            <h2>{{ out_of_stock }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-x-circle-fill" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Components</h5>
+                <a href="{% url 'components:component_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_components %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Value</th>
+                                    <th>Manufacturer</th>
+                                    <th>Supplier</th>
+                                    <th>Stock</th>
+                                    <th>Status</th>
+                                    <th>Date Added</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for component in recent_components %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'components:component_detail' component.pk %}">
+                                            {{ component.description }}
+                                        </a>
+                                    </td>
+                                    <td>{{ component.value|default:"-" }}</td>
+                                    <td>{{ component.manufacturer|default:"-" }}</td>
+                                    <td>{{ component.supplier_name|default:"-" }}</td>
+                                    <td>{{ component.quantity_in_stock }}</td>
+                                    <td>
+                                        {% if component.stock_status == "Out of Stock" %}
+                                            <span class="badge bg-danger">{{ component.stock_status }}</span>
+                                        {% elif component.stock_status == "Low Stock" %}
+                                            <span class="badge bg-warning text-dark">{{ component.stock_status }}</span>
+                                        {% else %}
+                                            <span class="badge bg-success">{{ component.stock_status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ component.date_added|date:"M d, Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No components found. <a href="{% url 'components:component_create' %}">Add your first component</a>.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

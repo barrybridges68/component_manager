@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Component Stock Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ title }}</h1>
+            <a href="{% url 'components:component_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                {{ form.description.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.description }}
+                            <datalist id="description-suggestions">
+                                <!-- Populated by JavaScript -->
+                            </datalist>
+                            {% if form.description.help_text %}
+                                <div class="form-text">{{ form.description.help_text }}</div>
+                            {% endif %}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.value.id_for_label }}" class="form-label">
+                                {{ form.value.label }}
+                            </label>
+                            {{ form.value }}
+                            {% if form.value.help_text %}
+                                <div class="form-text">{{ form.value.help_text }}</div>
+                            {% endif %}
+                            {% if form.value.errors %}
+                                <div class="text-danger">{{ form.value.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.manufacturer.id_for_label }}" class="form-label">
+                                {{ form.manufacturer.label }}
+                            </label>
+                            {{ form.manufacturer }}
+                            <datalist id="manufacturer-suggestions">
+                                <!-- Populated by JavaScript -->
+                            </datalist>
+                            {% if form.manufacturer.help_text %}
+                                <div class="form-text">{{ form.manufacturer.help_text }}</div>
+                            {% endif %}
+                            {% if form.manufacturer.errors %}
+                                <div class="text-danger">{{ form.manufacturer.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.supplier_name.id_for_label }}" class="form-label">
+                                {{ form.supplier_name.label }}
+                            </label>
+                            {{ form.supplier_name }}
+                            <datalist id="supplier-suggestions">
+                                <!-- Populated by JavaScript -->
+                            </datalist>
+                            {% if form.supplier_name.help_text %}
+                                <div class="form-text">{{ form.supplier_name.help_text }}</div>
+                            {% endif %}
+                            {% if form.supplier_name.errors %}
+                                <div class="text-danger">{{ form.supplier_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.supplier_part_number.id_for_label }}" class="form-label">
+                                {{ form.supplier_part_number.label }}
+                            </label>
+                            {{ form.supplier_part_number }}
+                            {% if form.supplier_part_number.help_text %}
+                                <div class="form-text">{{ form.supplier_part_number.help_text }}</div>
+                            {% endif %}
+                            {% if form.supplier_part_number.errors %}
+                                <div class="text-danger">{{ form.supplier_part_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.cost.id_for_label }}" class="form-label">
+                                {{ form.cost.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">£</span>
+                                {{ form.cost }}
+                            </div>
+                            {% if form.cost.help_text %}
+                                <div class="form-text">{{ form.cost.help_text }}</div>
+                            {% endif %}
+                            {% if form.cost.errors %}
+                                <div class="text-danger">{{ form.cost.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.quantity_in_stock.id_for_label }}" class="form-label">
+                                {{ form.quantity_in_stock.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.quantity_in_stock }}
+                            {% if form.quantity_in_stock.help_text %}
+                                <div class="form-text">{{ form.quantity_in_stock.help_text }}</div>
+                            {% endif %}
+                            {% if form.quantity_in_stock.errors %}
+                                <div class="text-danger">{{ form.quantity_in_stock.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.minimum_stock_level.id_for_label }}" class="form-label">
+                                {{ form.minimum_stock_level.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.minimum_stock_level }}
+                            {% if form.minimum_stock_level.help_text %}
+                                <div class="form-text">{{ form.minimum_stock_level.help_text }}</div>
+                            {% endif %}
+                            {% if form.minimum_stock_level.errors %}
+                                <div class="text-danger">{{ form.minimum_stock_level.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.location.id_for_label }}" class="form-label">
+                                {{ form.location.label }}
+                            </label>
+                            {{ form.location }}
+                            {% if form.location.help_text %}
+                                <div class="form-text">{{ form.location.help_text }}</div>
+                            {% endif %}
+                            {% if form.location.errors %}
+                                <div class="text-danger">{{ form.location.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            {{ form.notes.label }}
+                        </label>
+                        {{ form.notes }}
+                        {% if form.notes.help_text %}
+                            <div class="form-text">{{ form.notes.help_text }}</div>
+                        {% endif %}
+                        {% if form.notes.errors %}
+                            <div class="text-danger">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'components:component_list' %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if component %}
+                                <i class="bi bi-check-circle"></i> Update Component
+                            {% else %}
+                                <i class="bi bi-plus-circle"></i> Add Component
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const descriptionInput = document.getElementById('{{ form.description.id_for_label }}');
+    const manufacturerInput = document.getElementById('{{ form.manufacturer.id_for_label }}');
+    const supplierInput = document.getElementById('{{ form.supplier_name.id_for_label }}');
+    
+    const descriptionDatalist = document.getElementById('description-suggestions');
+    const manufacturerDatalist = document.getElementById('manufacturer-suggestions');
+    const supplierDatalist = document.getElementById('supplier-suggestions');
+    
+    let debounceTimers = {};
+    
+    // Load initial suggestions for all fields
+    loadSuggestions('', 'description');
+    loadSuggestions('', 'manufacturer');
+    loadSuggestions('', 'supplier');
+    
+    // Add input event listeners for real-time suggestions
+    descriptionInput.addEventListener('input', function() {
+        handleInputChange(this.value, 'description');
+    });
+    
+    manufacturerInput.addEventListener('input', function() {
+        handleInputChange(this.value, 'manufacturer');
+    });
+    
+    supplierInput.addEventListener('input', function() {
+        handleInputChange(this.value, 'supplier');
+    });
+    
+    function handleInputChange(query, fieldType) {
+        // Debounce the API calls
+        clearTimeout(debounceTimers[fieldType]);
+        debounceTimers[fieldType] = setTimeout(() => {
+            loadSuggestions(query, fieldType);
+        }, 300);
+    }
+    
+    function loadSuggestions(query, fieldType) {
+        let url;
+        let datalist;
+        
+        switch(fieldType) {
+            case 'description':
+                url = new URL('{% url "components:description_autocomplete" %}', window.location.origin);
+                datalist = descriptionDatalist;
+                break;
+            case 'manufacturer':
+                url = new URL('{% url "components:manufacturer_autocomplete" %}', window.location.origin);
+                datalist = manufacturerDatalist;
+                break;
+            case 'supplier':
+                url = new URL('{% url "components:supplier_autocomplete" %}', window.location.origin);
+                datalist = supplierDatalist;
+                break;
+            default:
+                return;
+        }
+        
+        if (query) {
+            url.searchParams.set('q', query);
+        }
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(suggestions => {
+                // Clear existing options
+                datalist.innerHTML = '';
+                
+                // Add new options
+                suggestions.forEach(suggestion => {
+                    const option = document.createElement('option');
+                    option.value = suggestion;
+                    datalist.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error(`Error loading ${fieldType} suggestions:`, error);
+            });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Delete Purchase Order {{ purchase_order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="mb-4">
+                <h2>Delete Purchase Order</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'components:dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'components:purchase_order_list' %}">Purchase Orders</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'components:purchase_order_detail' purchase_order.pk %}">{{ purchase_order.order_number }}</a></li>
+                        <li class="breadcrumb-item active">Delete</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-warning"></i> Warning!</h6>
+                                <p class="mb-0">You are about to permanently delete this purchase order. This action cannot be undone.</p>
+                            </div>
+                            
+                            <!-- Purchase Order Summary -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <th width="40%">Order Number:</th>
+                                            <td>{{ purchase_order.order_number }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Supplier:</th>
+                                            <td>{{ purchase_order.supplier.name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Status:</th>
+                                            <td>
+                                                {% if purchase_order.status == 'draft' %}
+                                                    <span class="badge bg-secondary">Draft</span>
+                                                {% elif purchase_order.status == 'pending' %}
+                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                                {% elif purchase_order.status == 'ordered' %}
+                                                    <span class="badge bg-info">Ordered</span>
+                                                {% elif purchase_order.status == 'received' %}
+                                                    <span class="badge bg-success">Received</span>
+                                                {% elif purchase_order.status == 'cancelled' %}
+                                                    <span class="badge bg-danger">Cancelled</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <th width="40%">Date Created:</th>
+                                            <td>{{ purchase_order.date_created|date:"F j, Y" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Total Amount:</th>
+                                            <td><strong>${{ purchase_order.total_amount|floatformat:2 }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Items:</th>
+                                            <td>{{ purchase_order.purchaseorderitem_set.count }} items</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            {% if purchase_order.purchaseorderitem_set.exists %}
+                            <!-- Items that will be deleted -->
+                            <div class="mt-4">
+                                <h6>Items that will be deleted with this purchase order:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Component</th>
+                                                <th>Description</th>
+                                                <th>Quantity</th>
+                                                <th>Unit Cost</th>
+                                                <th>Total Cost</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in purchase_order.purchaseorderitem_set.all %}
+                                            <tr>
+                                                <td>{{ item.component.part_number }}</td>
+                                                <td>{{ item.component.description|truncatechars:50 }}</td>
+                                                <td>{{ item.quantity }}</td>
+                                                <td>${{ item.unit_cost|floatformat:2 }}</td>
+                                                <td>${{ item.total_cost|floatformat:2 }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if purchase_order.notes %}
+                            <div class="mt-3">
+                                <h6>Notes:</h6>
+                                <p class="text-muted">{{ purchase_order.notes|linebreaks }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> Yes, Delete Purchase Order
+                                </button>
+                            </form>
+                            <a href="{% url 'components:purchase_order_detail' purchase_order.pk %}" class="btn btn-secondary ms-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

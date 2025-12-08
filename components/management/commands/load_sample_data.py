@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
-from components.models import Component
+from components.models import Component, ComponentSupplier, PurchaseOrder, PurchaseOrderItem
 import random
+from datetime import date, timedelta
 
 
 class Command(BaseCommand):
@@ -243,8 +244,76 @@ class Command(BaseCommand):
             )
             created_count += 1
 
+        # Create sample suppliers first
+        suppliers_created = 0
+        supplier_data = [
+            ('Digikey', 'John Smith', '555-0101', 'orders@digikey.com', 'https://www.digikey.com', '123 Main St, Minneapolis, MN', 'ACME Electronics', 'ACC001'),
+            ('Mouser', 'Jane Doe', '555-0102', 'sales@mouser.com', 'https://www.mouser.com', '456 Oak Ave, Mansfield, TX', 'ACME Electronics', 'ACC002'),
+            ('Farnell', 'Bob Wilson', '555-0103', 'support@farnell.com', 'https://www.farnell.com', '789 Pine St, London, UK', 'ACME Electronics', 'ACC003'),
+            ('Arrow', 'Alice Johnson', '555-0104', 'info@arrow.com', 'https://www.arrow.com', '321 Elm Dr, Denver, CO', 'ACME Electronics', 'ACC004'),
+        ]
+        
+        for name, contact, phone, email, website, address, account_name, account_num in supplier_data:
+            supplier, created = ComponentSupplier.objects.get_or_create(
+                supplier=name,
+                defaults={
+                    'contact_email': email,
+                    'phone_number': phone,
+                    'website': website,
+                    'address': address,
+                    'account_name': account_name,
+                    'account_number': account_num,
+                    'notes': f'Sample supplier data for {name}'
+                }
+            )
+            if created:
+                suppliers_created += 1
+        
+        # Create sample purchase orders
+        suppliers = ComponentSupplier.objects.all()
+        components = list(Component.objects.all()[:20])  # Use first 20 components
+        
+        po_count = 0
+        statuses = ['draft', 'pending', 'ordered', 'received']
+        
+        for i in range(5):  # Create 5 sample purchase orders
+            supplier = random.choice(suppliers)
+            status = random.choice(statuses)
+            days_ago = random.randint(1, 30)
+            order_date = date.today() - timedelta(days=days_ago)
+            
+            # Create expected date 1-4 weeks from creation
+            expected_delivery = order_date + timedelta(days=random.randint(7, 28))
+            
+            po = PurchaseOrder.objects.create(
+                supplier=supplier,
+                status=status,
+                expected_delivery=expected_delivery,
+                notes=f'Sample purchase order {i+1} for testing purposes'
+            )
+            po.order_date = order_date  # Set custom creation date
+            po.save()
+            
+            # Add 2-5 random components to each PO
+            num_items = random.randint(2, 5)
+            selected_components = random.sample(components, num_items)
+            
+            for component in selected_components:
+                quantity = random.randint(1, 20)
+                unit_cost = round(random.uniform(0.10, 50.00), 2)
+                
+                PurchaseOrderItem.objects.create(
+                    purchase_order=po,
+                    component=component,
+                    quantity=quantity,
+                    unit_cost=unit_cost
+                )
+            
+            po_count += 1
+        
         self.stdout.write(
             self.style.SUCCESS(
-                f'Successfully loaded {created_count} sample components!'
+                f'Successfully loaded {created_count} sample components, '
+                f'{suppliers_created} suppliers, and {po_count} purchase orders!'
             )
         )

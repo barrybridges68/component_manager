@@ -1,12 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, F, Sum, Value
+from django.db.models import Q, F, Sum, Value, Case, When, IntegerField
 from django.db.models.functions import Coalesce
 from django.db import models
 from django.http import JsonResponse
-from .models import Component, ComponentDescription, ComponentManufacturer, ComponentSupplier
-from .forms import ComponentForm, ComponentSupplierForm
+from .models import Component, ComponentDescription, ComponentManufacturer, ComponentSupplier, Todo, PurchaseOrder, PurchaseOrderItem
+from .forms import ComponentForm, ComponentSupplierForm, TodoForm, PurchaseOrderForm, PurchaseOrderItemForm, AddToPurchaseOrderForm, PurchaseOrderItemEditForm
 
 
 def component_list(request):
@@ -154,14 +154,40 @@ def dashboard(request):
     for component in components_with_cost:
         total_stock_cost += component.quantity_in_stock * component.cost
     
+    # Todo statistics
+    uncompleted_todos = Todo.objects.exclude(status='done').count()
+    completed_todos = Todo.objects.filter(status='done').count()
+    high_priority_todos = Todo.objects.filter(status__in=['pending', 'started', 'blocked'], priority='high').count()
+    
+    # Purchase order statistics
+    total_purchase_orders = PurchaseOrder.objects.count()
+    draft_orders = PurchaseOrder.objects.filter(status='draft').count()
+    pending_orders = PurchaseOrder.objects.filter(status='pending').count()
+    ordered_orders = PurchaseOrder.objects.filter(status='ordered').count()
+    
+    # Calculate total purchase order value
+    total_po_value = 0
+    for po in PurchaseOrder.objects.all():
+        total_po_value += po.total_amount
+    
     recent_components = Component.objects.order_by('-date_added')[:5]
+    recent_purchase_orders = PurchaseOrder.objects.select_related('supplier').order_by('-order_date')[:5]
     
     context = {
         'total_components': total_components,
         'out_of_stock': out_of_stock,
         'low_stock': low_stock,
         'total_stock_cost': total_stock_cost,
+        'uncompleted_todos': uncompleted_todos,
+        'completed_todos': completed_todos,
+        'high_priority_todos': high_priority_todos,
+        'total_purchase_orders': total_purchase_orders,
+        'draft_orders': draft_orders,
+        'pending_orders': pending_orders,
+        'ordered_orders': ordered_orders,
+        'total_po_value': total_po_value,
         'recent_components': recent_components,
+        'recent_purchase_orders': recent_purchase_orders,
     }
     return render(request, 'components/dashboard.html', context)
 
@@ -325,3 +351,396 @@ def supplier_delete(request, pk):
     return render(request, 'components/supplier_confirm_delete.html', {
         'supplier': supplier
     })
+
+
+# Todo Views
+def todo_list(request):
+    """Display list of all todos with search and filtering."""
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    priority_filter = request.GET.get('priority', '')
+    sort_by = request.GET.get('sort', 'priority')
+    order = request.GET.get('order', 'desc')
+    per_page = request.GET.get('per_page', '20')
+    
+    # Validate per_page parameter
+    try:
+        per_page = int(per_page)
+        if per_page not in [10, 20, 50, 100]:
+            per_page = 20
+    except ValueError:
+        per_page = 20
+    
+    # Base queryset - separate active and completed todos
+    active_todos = Todo.objects.exclude(status='done')
+    completed_todos = Todo.objects.filter(status='done')
+    
+    # Search functionality for active todos
+    if search_query:
+        active_todos = active_todos.filter(
+            Q(item__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
+        completed_todos = completed_todos.filter(
+            Q(item__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
+    
+    # Status filter (only apply to active todos since completed are separate)
+    if status_filter and status_filter != 'done':
+        active_todos = active_todos.filter(status=status_filter)
+    
+    # Priority filter for both active and completed
+    if priority_filter:
+        active_todos = active_todos.filter(priority=priority_filter)
+        completed_todos = completed_todos.filter(priority=priority_filter)
+    
+    # Sorting with custom priority ordering for active todos
+    valid_sort_fields = ['item', 'priority', 'status', 'date_created', 'completion_date']
+    if sort_by not in valid_sort_fields:
+        sort_by = 'priority'
+    
+    # Apply sorting with custom priority order to active todos
+    if sort_by == 'priority':
+        if order == 'desc':
+            # High -> Medium -> Low
+            active_todos = active_todos.annotate(
+                priority_order=Case(
+                    When(priority='high', then=Value(3)),
+                    When(priority='medium', then=Value(2)),
+                    When(priority='low', then=Value(1)),
+                    output_field=IntegerField()
+                )
+            ).order_by('-priority_order', '-date_created')
+        else:
+            # Low -> Medium -> High
+            active_todos = active_todos.annotate(
+                priority_order=Case(
+                    When(priority='high', then=Value(3)),
+                    When(priority='medium', then=Value(2)),
+                    When(priority='low', then=Value(1)),
+                    output_field=IntegerField()
+                )
+            ).order_by('priority_order', '-date_created')
+    else:
+        if order == 'desc':
+            sort_field = f'-{sort_by}'
+        else:
+            sort_field = sort_by
+        active_todos = active_todos.order_by(sort_field)
+    
+    # Always sort completed todos by completion date (newest first)
+    completed_todos = completed_todos.order_by('-completion_date')
+    
+    # Pagination for active todos only
+    paginator = Paginator(active_todos, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get status and priority choices for filters (exclude 'done' from status choices for active todos)
+    status_choices = [choice for choice in Todo.STATUS_CHOICES if choice[0] != 'done']
+    priority_choices = Todo.PRIORITY_CHOICES
+    
+    context = {
+        'page_obj': page_obj,
+        'completed_todos': completed_todos[:10],  # Limit completed todos to 10 for performance
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'priority_filter': priority_filter,
+        'status_choices': status_choices,
+        'priority_choices': priority_choices,
+        'current_sort': request.GET.get('sort', 'priority'),
+        'current_order': request.GET.get('order', 'desc'),
+        'per_page': per_page,
+        'total_active_todos': active_todos.count(),
+        'total_completed_todos': completed_todos.count(),
+    }
+    
+    return render(request, 'components/todo_list.html', context)
+
+
+def todo_detail(request, pk):
+    """Display details of a specific todo."""
+    todo = get_object_or_404(Todo, pk=pk)
+    
+    context = {
+        'todo': todo,
+    }
+    
+    return render(request, 'components/todo_detail.html', context)
+
+
+def todo_create(request):
+    """Create a new todo."""
+    if request.method == 'POST':
+        form = TodoForm(request.POST)
+        if form.is_valid():
+            todo = form.save()
+            messages.success(request, f'Todo "{todo.item}" was created successfully.')
+            return redirect('components:todo_detail', pk=todo.pk)
+    else:
+        form = TodoForm()
+    
+    return render(request, 'components/todo_form.html', {
+        'form': form,
+        'title': 'Add New Todo'
+    })
+
+
+def todo_update(request, pk):
+    """Update an existing todo."""
+    todo = get_object_or_404(Todo, pk=pk)
+    
+    if request.method == 'POST':
+        form = TodoForm(request.POST, instance=todo)
+        if form.is_valid():
+            todo = form.save()
+            messages.success(request, f'Todo "{todo.item}" was updated successfully.')
+            return redirect('components:todo_detail', pk=todo.pk)
+    else:
+        form = TodoForm(instance=todo)
+    
+    return render(request, 'components/todo_form.html', {
+        'form': form,
+        'todo': todo,
+        'title': f'Edit Todo'
+    })
+
+
+def todo_delete(request, pk):
+    """Delete a todo."""
+    todo = get_object_or_404(Todo, pk=pk)
+    
+    if request.method == 'POST':
+        todo_item = todo.item
+        todo.delete()
+        messages.success(request, f'Todo "{todo_item}" was deleted successfully.')
+        return redirect('components:todo_list')
+    
+    return render(request, 'components/todo_confirm_delete.html', {
+        'todo': todo
+    })
+
+
+# Purchase Order Views
+def purchase_order_list(request):
+    """Display list of all purchase orders."""
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    sort_by = request.GET.get('sort', 'order_date')
+    order = request.GET.get('order', 'desc')
+    per_page = request.GET.get('per_page', '20')
+    
+    # Validate per_page parameter
+    try:
+        per_page = int(per_page)
+        if per_page not in [10, 20, 50, 100]:
+            per_page = 20
+    except ValueError:
+        per_page = 20
+    
+    # Base queryset
+    purchase_orders = PurchaseOrder.objects.select_related('supplier')
+    
+    # Search functionality
+    if search_query:
+        purchase_orders = purchase_orders.filter(
+            Q(order_number__icontains=search_query) |
+            Q(supplier__supplier__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
+    
+    # Status filter
+    if status_filter:
+        purchase_orders = purchase_orders.filter(status=status_filter)
+    
+    # Sorting
+    valid_sort_fields = ['order_number', 'supplier__supplier', 'status', 'order_date', 'expected_delivery']
+    if sort_by not in valid_sort_fields:
+        sort_by = 'order_date'
+    
+    if order == 'desc':
+        sort_by = f'-{sort_by}'
+    
+    purchase_orders = purchase_orders.order_by(sort_by)
+    
+    # Pagination
+    paginator = Paginator(purchase_orders, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get status choices for filters
+    status_choices = PurchaseOrder.STATUS_CHOICES
+    
+    context = {
+        'page_obj': page_obj,
+        'purchase_orders': page_obj,  # Add this for template compatibility
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'status_choices': status_choices,
+        'current_sort': request.GET.get('sort', 'order_date'),
+        'current_order': request.GET.get('order', 'desc'),
+        'per_page': per_page,
+        'total_purchase_orders': purchase_orders.count(),
+        'suppliers': ComponentSupplier.objects.all(),  # For filter dropdown
+    }
+    
+    return render(request, 'components/purchase_order_list.html', context)
+
+
+def purchase_order_detail(request, pk):
+    """Display details of a specific purchase order."""
+    purchase_order = get_object_or_404(PurchaseOrder, pk=pk)
+    items = purchase_order.purchaseorderitem_set.select_related('component').all()
+    
+    context = {
+        'purchase_order': purchase_order,
+        'items': items,
+    }
+    
+    return render(request, 'components/purchase_order_detail.html', context)
+
+
+def purchase_order_create(request):
+    """Create a new purchase order."""
+    if request.method == 'POST':
+        form = PurchaseOrderForm(request.POST)
+        if form.is_valid():
+            purchase_order = form.save()
+            messages.success(request, f'Purchase order "{purchase_order.order_number}" was created successfully.')
+            return redirect('components:purchase_order_detail', pk=purchase_order.pk)
+    else:
+        form = PurchaseOrderForm()
+    
+    return render(request, 'components/purchase_order_form.html', {
+        'form': form,
+        'title': 'Create New Purchase Order'
+    })
+
+
+def purchase_order_update(request, pk):
+    """Update an existing purchase order."""
+    purchase_order = get_object_or_404(PurchaseOrder, pk=pk)
+    
+    if request.method == 'POST':
+        form = PurchaseOrderForm(request.POST, instance=purchase_order)
+        if form.is_valid():
+            purchase_order = form.save()
+            messages.success(request, f'Purchase order "{purchase_order.order_number}" was updated successfully.')
+            return redirect('components:purchase_order_detail', pk=purchase_order.pk)
+    else:
+        form = PurchaseOrderForm(instance=purchase_order)
+    
+    return render(request, 'components/purchase_order_form.html', {
+        'form': form,
+        'purchase_order': purchase_order,
+        'title': f'Edit Purchase Order {purchase_order.order_number}'
+    })
+
+
+def purchase_order_delete(request, pk):
+    """Delete a purchase order."""
+    purchase_order = get_object_or_404(PurchaseOrder, pk=pk)
+    
+    if request.method == 'POST':
+        order_number = purchase_order.order_number
+        purchase_order.delete()
+        messages.success(request, f'Purchase order "{order_number}" was deleted successfully.')
+        return redirect('components:purchase_order_list')
+    
+    return render(request, 'components/purchase_order_confirm_delete.html', {
+        'purchase_order': purchase_order
+    })
+
+
+def add_component_to_purchase_order(request, component_id):
+    """Add a component to a selected purchase order."""
+    component = get_object_or_404(Component, pk=component_id)
+    
+    if request.method == 'POST':
+        form = AddToPurchaseOrderForm(request.POST)
+        if form.is_valid():
+            purchase_order = form.cleaned_data['purchase_order']
+            quantity = form.cleaned_data['quantity']
+            unit_cost = form.cleaned_data['unit_cost']
+            
+            # Check if component already exists in the purchase order
+            existing_item = PurchaseOrderItem.objects.filter(
+                purchase_order=purchase_order,
+                component=component
+            ).first()
+            
+            if existing_item:
+                # Update existing item
+                existing_item.quantity += quantity
+                if unit_cost:
+                    existing_item.unit_cost = unit_cost
+                existing_item.save()
+                messages.success(request, f'Updated quantity for "{component.description}" in purchase order {purchase_order.order_number}.')
+            else:
+                # Create new item
+                PurchaseOrderItem.objects.create(
+                    purchase_order=purchase_order,
+                    component=component,
+                    quantity=quantity,
+                    unit_cost=unit_cost or component.cost
+                )
+                messages.success(request, f'Added "{component.description}" to purchase order {purchase_order.order_number}.')
+            
+            return redirect('components:purchase_order_detail', pk=purchase_order.pk)
+    else:
+        initial_data = {}
+        if component.cost:
+            initial_data['unit_cost'] = component.cost
+        form = AddToPurchaseOrderForm(initial=initial_data)
+    
+    context = {
+        'form': form,
+        'component': component,
+        'title': f'Add {component.description} to Purchase Order'
+    }
+    
+    return render(request, 'components/add_component_to_purchase_order.html', context)
+
+
+def purchase_order_item_edit(request, pk):
+    """Edit a purchase order item's quantity and unit cost."""
+    item = get_object_or_404(PurchaseOrderItem, pk=pk)
+    purchase_order = item.purchase_order
+    
+    if request.method == 'POST':
+        form = PurchaseOrderItemEditForm(request.POST, instance=item)
+        if form.is_valid():
+            updated_item = form.save()
+            messages.success(request, f'Updated "{updated_item.component.description}" in purchase order {purchase_order.order_number}.')
+            return redirect('components:purchase_order_detail', pk=purchase_order.pk)
+    else:
+        form = PurchaseOrderItemEditForm(instance=item)
+    
+    context = {
+        'form': form,
+        'item': item,
+        'purchase_order': purchase_order,
+        'title': f'Edit {item.component.description}'
+    }
+    
+    return render(request, 'components/purchase_order_item_edit.html', context)
+
+
+def purchase_order_item_delete(request, pk):
+    """Delete a purchase order item."""
+    item = get_object_or_404(PurchaseOrderItem, pk=pk)
+    purchase_order = item.purchase_order
+    
+    if request.method == 'POST':
+        component_description = item.component.description
+        item.delete()
+        messages.success(request, f'Removed "{component_description}" from purchase order {purchase_order.order_number}.')
+        return redirect('components:purchase_order_detail', pk=purchase_order.pk)
+    
+    context = {
+        'item': item,
+        'purchase_order': purchase_order,
+    }
+    
+    return render(request, 'components/purchase_order_item_confirm_delete.html', context)

@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+
+{% block title %}Todo List - Component Stock Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Todo List</h1>
+            <a href="{% url 'components:todo_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add New Todo
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <form method="get" class="d-flex">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" 
+                       name="search" 
+                       class="form-control" 
+                       placeholder="Search todos..." 
+                       value="{{ search_query }}">
+                <button type="submit" class="btn btn-outline-secondary">Search</button>
+                {% if search_query %}
+                    <a href="{% url 'components:todo_list' %}" class="btn btn-outline-danger">Clear</a>
+                {% endif %}
+            </div>
+            <!-- Hidden fields to maintain filters and pagination -->
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            <input type="hidden" name="priority" value="{{ priority_filter }}">
+            <input type="hidden" name="sort" value="{{ current_sort }}">
+            <input type="hidden" name="order" value="{{ current_order }}">
+        </form>
+    </div>
+    <div class="col-md-6">
+        <div class="row">
+            <div class="col-md-4">
+                <form method="get">
+                    <select class="form-select" name="status" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        {% for value, display in status_choices %}
+                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <!-- Hidden fields to maintain other filters -->
+                    <input type="hidden" name="search" value="{{ search_query }}">
+                    <input type="hidden" name="priority" value="{{ priority_filter }}">
+                    <input type="hidden" name="sort" value="{{ current_sort }}">
+                    <input type="hidden" name="order" value="{{ current_order }}">
+                </form>
+            </div>
+            <div class="col-md-4">
+                <form method="get">
+                    <select class="form-select" name="priority" onchange="this.form.submit()">
+                        <option value="">All Priority</option>
+                        {% for value, display in priority_choices %}
+                            <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <!-- Hidden fields to maintain other filters -->
+                    <input type="hidden" name="search" value="{{ search_query }}">
+                    <input type="hidden" name="status" value="{{ status_filter }}">
+                    <input type="hidden" name="sort" value="{{ current_sort }}">
+                    <input type="hidden" name="order" value="{{ current_order }}">
+                </form>
+            </div>
+            <div class="col-md-4">
+                <form method="get">
+                    <select class="form-select" name="per_page" onchange="this.form.submit()">
+                        <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                        <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                    </select>
+                    <!-- Hidden fields to maintain search and filters -->
+                    <input type="hidden" name="search" value="{{ search_query }}">
+                    <input type="hidden" name="status" value="{{ status_filter }}">
+                    <input type="hidden" name="priority" value="{{ priority_filter }}">
+                    <input type="hidden" name="sort" value="{{ current_sort }}">
+                    <input type="hidden" name="order" value="{{ current_order }}">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Summary -->
+<div class="row mb-3">
+    <div class="col-12">
+        <p class="text-muted">
+            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_active_todos }} active todos
+            {% if search_query %}
+                for "{{ search_query }}"
+            {% endif %}
+            {% if status_filter %}
+                | Status: {{ status_filter|title }}
+            {% endif %}
+            {% if priority_filter %}
+                | Priority: {{ priority_filter|title }}
+            {% endif %}
+            {% if total_completed_todos > 0 %}
+                | {{ total_completed_todos }} completed todo{{ total_completed_todos|pluralize }}
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<!-- Active Todos Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Active Todo Items</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>
+                                    <a href="?sort=item&order={% if current_sort == 'item' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&per_page={{ per_page }}" 
+                                       class="text-decoration-none text-dark">
+                                        Item
+                                        {% if current_sort == 'item' %}
+                                            {% if current_order == 'asc' %}
+                                                <i class="bi bi-arrow-up"></i>
+                                            {% else %}
+                                                <i class="bi bi-arrow-down"></i>
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="?sort=priority&order={% if current_sort == 'priority' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&per_page={{ per_page }}" 
+                                       class="text-decoration-none text-dark">
+                                        Priority
+                                        {% if current_sort == 'priority' %}
+                                            {% if current_order == 'asc' %}
+                                                <i class="bi bi-arrow-up"></i>
+                                            {% else %}
+                                                <i class="bi bi-arrow-down"></i>
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="?sort=status&order={% if current_sort == 'status' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&per_page={{ per_page }}" 
+                                       class="text-decoration-none text-dark">
+                                        Status
+                                        {% if current_sort == 'status' %}
+                                            {% if current_order == 'asc' %}
+                                                <i class="bi bi-arrow-up"></i>
+                                            {% else %}
+                                                <i class="bi bi-arrow-down"></i>
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="?sort=date_created&order={% if current_sort == 'date_created' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&per_page={{ per_page }}" 
+                                       class="text-decoration-none text-dark">
+                                        Date Created
+                                        {% if current_sort == 'date_created' %}
+                                            {% if current_order == 'asc' %}
+                                                <i class="bi bi-arrow-up"></i>
+                                            {% else %}
+                                                <i class="bi bi-arrow-down"></i>
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for todo in page_obj %}
+                            <tr {% if todo.is_overdue %}class="table-warning"{% endif %}>
+                                <td>
+                                    <a href="{% url 'components:todo_detail' todo.pk %}" class="text-decoration-none">
+                                        <strong>{{ todo.item }}</strong>
+                                    </a>
+                                    {% if todo.is_overdue %}
+                                        <span class="badge bg-warning text-dark ms-2">Overdue</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {{ todo.priority_badge_class }}">
+                                        {{ todo.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ todo.status_badge_class }}">
+                                        {{ todo.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ todo.date_created|date:"M d, Y g:i A" }}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'components:todo_detail' todo.pk %}" 
+                                           class="btn btn-sm btn-outline-primary" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'components:todo_update' todo.pk %}" 
+                                           class="btn btn-sm btn-outline-warning" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'components:todo_update' todo.pk %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item" value="{{ todo.item }}">
+                                            <input type="hidden" name="priority" value="{{ todo.priority }}">
+                                            <input type="hidden" name="status" value="done">
+                                            {% if todo.notes %}<input type="hidden" name="notes" value="{{ todo.notes }}">{% endif %}
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Mark Complete">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        </form>
+                                        <a href="{% url 'components:todo_delete' todo.pk %}" 
+                                           class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-check-square display-4 text-muted"></i>
+                    <p class="mt-3 mb-0">
+                        {% if search_query or status_filter or priority_filter %}
+                            No active todos found matching your criteria.
+                        {% else %}
+                            No active todos found. <a href="{% url 'components:todo_create' %}">Add the first todo</a>.
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Completed Todos Section -->
+{% if completed_todos %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-check-circle"></i> Completed Todos ({{ total_completed_todos }})
+                    {% if total_completed_todos > 10 %}
+                        <small class="ms-2">Showing last 10</small>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th>Priority</th>
+                                <th>Date Created</th>
+                                <th>Completion Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for todo in completed_todos %}
+                            <tr class="table-success">
+                                <td>
+                                    <a href="{% url 'components:todo_detail' todo.pk %}" class="text-decoration-none">
+                                        <strong>{{ todo.item }}</strong>
+                                    </a>
+                                    <span class="badge bg-success ms-2">
+                                        <i class="bi bi-check"></i> Done
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ todo.priority_badge_class }}">
+                                        {{ todo.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ todo.date_created|date:"M d, Y g:i A" }}
+                                </td>
+                                <td>
+                                    {{ todo.completion_date|date:"M d, Y g:i A" }}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'components:todo_detail' todo.pk %}" 
+                                           class="btn btn-sm btn-outline-primary" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'components:todo_update' todo.pk %}" 
+                                           class="btn btn-sm btn-outline-warning" title="Reopen">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </a>
+                                        <a href="{% url 'components:todo_delete' todo.pk %}" 
+                                           class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Todos pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&sort={{ current_sort }}&order={{ current_order }}&per_page={{ per_page }}">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </a>
+            </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&sort={{ current_sort }}&order={{ current_order }}&per_page={{ per_page }}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&sort={{ current_sort }}&order={{ current_order }}&per_page={{ per_page }}">
+                    Next <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

@@ -15,6 +15,18 @@
 .clickable-card:hover .card {
     border-color: rgba(255,255,255,0.3);
 }
+.small-card {
+    font-size: 0.7rem;
+}
+.small-card h5 {
+    font-size: 0.8rem;
+}
+.small-card h2 {
+    font-size: 1.4rem;
+}
+.small-card i {
+    font-size: 2.1rem !important;
+}
 </style>
 
 <div class="row">
@@ -23,42 +35,101 @@
     </div>
 </div>
 
+<!-- Purchase Order Statistics Row -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card bg-primary text-white">
+        <a href="{% url 'components:purchase_order_list' %}" class="text-decoration-none clickable-card">
+            <div class="card bg-secondary text-white small-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Orders</h5>
+                            <h2>{{ total_purchase_orders }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-shopping-cart" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-md-3">
+        <a href="{% url 'components:purchase_order_list' %}?status=draft" class="text-decoration-none clickable-card">
+            <div class="card bg-warning text-dark small-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Draft Orders</h5>
+                            <h2>{{ draft_orders }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-edit" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-md-3">
+        <a href="{% url 'components:purchase_order_list' %}?status=pending" class="text-decoration-none clickable-card">
+            <div class="card bg-info text-white small-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Pending Orders</h5>
+                            <h2>{{ pending_orders }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-primary text-white small-card">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h5 class="card-title">Total Components</h5>
-                        <h2>{{ total_components }}</h2>
+                        <h5 class="card-title">Total PO Value</h5>
+                        <h2>£{{ total_po_value|floatformat:2 }}</h2>
                     </div>
                     <div class="align-self-center">
-                        <i class="bi bi-cpu-fill" style="font-size: 3rem;"></i>
+                        <i class="fas fa-dollar-sign" style="font-size: 3rem;"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+</div>
+
+<div class="row mb-4">
     <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5 class="card-title">Total Stock Cost</h5>
-                        <h2>£{{ total_stock_cost|floatformat:2 }}</h2>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-currency-pound" style="font-size: 3rem;"></i>
+        <a href="{% url 'components:component_list' %}" class="text-decoration-none clickable-card">
+            <div class="card bg-primary text-white small-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Components</h5>
+                            <h2>{{ total_components }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-cpu-fill" style="font-size: 3rem;"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-md-3">
         <a href="{% url 'components:component_list' %}?status=low_stock" class="text-decoration-none clickable-card">
-            <div class="card bg-warning text-dark">
+            <div class="card bg-warning text-dark small-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -76,7 +147,7 @@
     
     <div class="col-md-3">
         <a href="{% url 'components:component_list' %}?status=out_of_stock" class="text-decoration-none clickable-card">
-            <div class="card bg-danger text-white">
+            <div class="card bg-danger text-white small-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -91,10 +162,81 @@
             </div>
         </a>
     </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white small-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Total Stock Cost</h5>
+                        <h2>£{{ total_stock_cost|floatformat:2 }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-currency-pound" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Todo Statistics Row -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <a href="{% url 'components:todo_list' %}" class="text-decoration-none clickable-card">
+            <div class="card bg-info text-white small-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Active Todos</h5>
+                            <h2>{{ uncompleted_todos }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-square" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-md-4">
+        <a href="{% url 'components:todo_list' %}?priority=high" class="text-decoration-none clickable-card">
+            <div class="card bg-danger text-white small-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">High Priority</h5>
+                            <h2>{{ high_priority_todos }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-success text-white small-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Completed Todos</h5>
+                        <h2>{{ completed_todos }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-check-circle-fill" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row">
-    <div class="col-12">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Recent Components</h5>
@@ -144,6 +286,65 @@
                     </div>
                 {% else %}
                     <p class="text-muted">No components found. <a href="{% url 'components:component_create' %}">Add your first component</a>.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Purchase Orders</h5>
+                <a href="{% url 'components:purchase_order_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_purchase_orders %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Supplier</th>
+                                    <th>Status</th>
+                                    <th>Total</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_purchase_orders %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'components:purchase_order_detail' order.pk %}" class="text-decoration-none">
+                                            {{ order.order_number }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'components:supplier_detail' order.supplier.pk %}" class="text-decoration-none">
+                                            {{ order.supplier.supplier }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if order.status == 'draft' %}
+                                            <span class="badge bg-secondary">Draft</span>
+                                        {% elif order.status == 'pending' %}
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        {% elif order.status == 'ordered' %}
+                                            <span class="badge bg-info">Ordered</span>
+                                        {% elif order.status == 'received' %}
+                                            <span class="badge bg-success">Received</span>
+                                        {% elif order.status == 'cancelled' %}
+                                            <span class="badge bg-danger">Cancelled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>${{ order.total_amount|floatformat:2 }}</td>
+                                    <td>{{ order.order_date|date:"M d, Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No purchase orders found. <a href="{% url 'components:purchase_order_create' %}">Create your first purchase order</a>.</p>
                 {% endif %}
             </div>
         </div>

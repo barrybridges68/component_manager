@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+from django.db.models import Case, When, Value, IntegerField
 
 
 class ComponentDescription(models.Model):
@@ -184,3 +186,257 @@ class Component(models.Model):
             return "Low Stock"
         else:
             return "In Stock"
+
+
+class Todo(models.Model):
+    """Model for todo items with priority and status tracking."""
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('started', 'Started'),
+        ('blocked', 'Blocked'),
+        ('done', 'Done'),
+    ]
+    
+    item = models.CharField(
+        max_length=255,
+        help_text="Description of the todo item"
+    )
+    
+    date_created = models.DateTimeField(
+        default=timezone.now,
+        help_text="Date when the todo was created"
+    )
+    
+    completion_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Date when the todo was completed"
+    )
+    
+    priority = models.CharField(
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        default='medium',
+        help_text="Priority level of the todo item"
+    )
+    
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='pending',
+        help_text="Current status of the todo item"
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Additional notes or details about the todo"
+    )
+    
+    date_modified = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-priority', '-date_created']
+        verbose_name = 'Todo Item'
+        verbose_name_plural = 'Todo Items'
+    
+    def __str__(self):
+        return f"{self.item} ({self.get_status_display()})"
+    
+    def save(self, *args, **kwargs):
+        # Automatically set completion date when status changes to 'done'
+        if self.status == 'done' and not self.completion_date:
+            self.completion_date = timezone.now()
+        # Clear completion date if status changes from 'done' to something else
+        elif self.status != 'done' and self.completion_date:
+            self.completion_date = None
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_overdue(self):
+        """Check if todo is overdue (created more than 7 days ago and not done)."""
+        if self.status == 'done':
+            return False
+        return (timezone.now() - self.date_created).days > 7
+    
+    @property
+    def priority_badge_class(self):
+        """Return Bootstrap badge class based on priority."""
+        priority_classes = {
+            'high': 'bg-danger',
+            'medium': 'bg-warning text-dark',
+            'low': 'bg-secondary'
+        }
+        return priority_classes.get(self.priority, 'bg-secondary')
+    
+    @property
+    def status_badge_class(self):
+        """Return Bootstrap badge class based on status."""
+        status_classes = {
+            'pending': 'bg-secondary',
+            'started': 'bg-primary',
+            'blocked': 'bg-danger',
+            'done': 'bg-success'
+        }
+        return status_classes.get(self.status, 'bg-secondary')
+
+
+class PurchaseOrder(models.Model):
+    """Model for purchase orders."""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('pending', 'Pending'),
+        ('ordered', 'Ordered'),
+        ('received', 'Received'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    order_number = models.CharField(
+        max_length=20,
+        unique=True,
+        help_text="Purchase order number"
+    )
+    
+    supplier = models.ForeignKey(
+        ComponentSupplier,
+        on_delete=models.CASCADE,
+        help_text="Supplier for this purchase order"
+    )
+    
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='draft',
+        help_text="Current status of the purchase order"
+    )
+    
+    order_date = models.DateTimeField(
+        default=timezone.now,
+        help_text="Date when the order was created"
+    )
+    
+    expected_delivery = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Expected delivery date"
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Additional notes for the purchase order"
+    )
+    
+    date_modified = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-order_date']
+        verbose_name = 'Purchase Order'
+        verbose_name_plural = 'Purchase Orders'
+    
+    def __str__(self):
+        return f"PO-{self.order_number} - {self.supplier.supplier}"
+    
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            # Generate order number if not provided
+            last_order = PurchaseOrder.objects.order_by('-id').first()
+            if last_order and last_order.order_number.startswith('PO'):
+                try:
+                    last_num = int(last_order.order_number[2:])
+                    self.order_number = f"PO{last_num + 1:04d}"
+                except ValueError:
+                    self.order_number = f"PO{timezone.now().year}{timezone.now().month:02d}001"
+            else:
+                self.order_number = f"PO{timezone.now().year}{timezone.now().month:02d}001"
+        super().save(*args, **kwargs)
+    
+    @property
+    def total_amount(self):
+        """Calculate total amount of the purchase order."""
+        total = 0
+        for item in self.purchaseorderitem_set.all():
+            if item.unit_cost and item.quantity:
+                total += item.unit_cost * item.quantity
+        return total
+    
+    @property
+    def item_count(self):
+        """Get count of items in the purchase order."""
+        return self.purchaseorderitem_set.count()
+    
+    @property
+    def status_badge_class(self):
+        """Return Bootstrap badge class based on status."""
+        status_classes = {
+            'draft': 'bg-secondary',
+            'pending': 'bg-warning text-dark',
+            'ordered': 'bg-primary',
+            'received': 'bg-success',
+            'cancelled': 'bg-danger'
+        }
+        return status_classes.get(self.status, 'bg-secondary')
+
+
+class PurchaseOrderItem(models.Model):
+    """Model for individual items in a purchase order."""
+    
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        help_text="Purchase order this item belongs to"
+    )
+    
+    component = models.ForeignKey(
+        Component,
+        on_delete=models.CASCADE,
+        help_text="Component to order"
+    )
+    
+    quantity = models.PositiveIntegerField(
+        help_text="Quantity to order"
+    )
+    
+    unit_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Unit cost for this order (may differ from component cost)"
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Notes for this specific item"
+    )
+    
+    date_added = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['purchase_order', 'component']
+        ordering = ['component__description']
+    
+    def __str__(self):
+        return f"{self.component.description} x{self.quantity}"
+    
+    def save(self, *args, **kwargs):
+        # Set unit cost from component if not provided
+        if not self.unit_cost and self.component.cost:
+            self.unit_cost = self.component.cost
+        super().save(*args, **kwargs)
+    
+    @property
+    def total_cost(self):
+        """Calculate total cost for this line item."""
+        if self.unit_cost and self.quantity:
+            return self.unit_cost * self.quantity
+        return 0

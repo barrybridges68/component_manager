@@ -1,5 +1,5 @@
 from django import forms
-from .models import Component, ComponentSupplier
+from .models import Component, ComponentSupplier, Todo, PurchaseOrder, PurchaseOrderItem
 
 
 class ComponentForm(forms.ModelForm):
@@ -128,4 +128,158 @@ class ComponentSupplierForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Additional notes about this supplier'
             }),
+        }
+
+
+class TodoForm(forms.ModelForm):
+    """Form for creating and updating todo items."""
+    
+    class Meta:
+        model = Todo
+        fields = [
+            'item',
+            'priority',
+            'status',
+            'notes'
+        ]
+        widgets = {
+            'item': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter todo item description',
+                'required': True
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Additional notes or details'
+            }),
+        }
+
+
+class PurchaseOrderForm(forms.ModelForm):
+    """Form for creating and updating purchase orders."""
+    
+    class Meta:
+        model = PurchaseOrder
+        fields = [
+            'supplier',
+            'status',
+            'expected_delivery',
+            'notes'
+        ]
+        widgets = {
+            'supplier': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'expected_delivery': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Additional notes for this purchase order'
+            }),
+        }
+
+
+class PurchaseOrderItemForm(forms.ModelForm):
+    """Form for adding items to purchase orders."""
+    
+    class Meta:
+        model = PurchaseOrderItem
+        fields = [
+            'component',
+            'quantity',
+            'unit_cost',
+            'notes'
+        ]
+        widgets = {
+            'component': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1'
+            }),
+            'unit_cost': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Notes for this item'
+            }),
+        }
+
+
+class AddToPurchaseOrderForm(forms.Form):
+    """Form for adding a component to a selected purchase order."""
+    
+    purchase_order = forms.ModelChoiceField(
+        queryset=PurchaseOrder.objects.filter(status__in=['draft', 'pending']),
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        help_text="Select a purchase order to add this component to"
+    )
+    
+    quantity = forms.IntegerField(
+        min_value=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'min': '1',
+            'value': '1'
+        }),
+        help_text="Quantity to add to the purchase order"
+    )
+    
+    unit_cost = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'min': '0'
+        }),
+        help_text="Unit cost (leave blank to use component's default cost)"
+    )
+
+
+class PurchaseOrderItemEditForm(forms.ModelForm):
+    """Form for editing purchase order item quantities and costs."""
+    
+    class Meta:
+        model = PurchaseOrderItem
+        fields = ['quantity', 'unit_cost']
+        widgets = {
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1'
+            }),
+            'unit_cost': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0'
+            }),
+        }
+        labels = {
+            'quantity': 'Quantity',
+            'unit_cost': 'Unit Cost ($)',
+        }
+        help_texts = {
+            'quantity': 'Enter the quantity needed.',
+            'unit_cost': 'Enter the cost per unit.',
         }

@@ -18,6 +18,23 @@ urlpatterns = [
     path('suppliers/<int:pk>/edit/', views.supplier_update, name='supplier_update'),
     path('suppliers/<int:pk>/delete/', views.supplier_delete, name='supplier_delete'),
     
+    # Todo URLs
+    path('todos/', views.todo_list, name='todo_list'),
+    path('todos/<int:pk>/', views.todo_detail, name='todo_detail'),
+    path('todos/add/', views.todo_create, name='todo_create'),
+    path('todos/<int:pk>/edit/', views.todo_update, name='todo_update'),
+    path('todos/<int:pk>/delete/', views.todo_delete, name='todo_delete'),
+    
+    # Purchase Order URLs
+    path('purchase-orders/', views.purchase_order_list, name='purchase_order_list'),
+    path('purchase-orders/<int:pk>/', views.purchase_order_detail, name='purchase_order_detail'),
+    path('purchase-orders/add/', views.purchase_order_create, name='purchase_order_create'),
+    path('purchase-orders/<int:pk>/edit/', views.purchase_order_update, name='purchase_order_update'),
+    path('purchase-orders/<int:pk>/delete/', views.purchase_order_delete, name='purchase_order_delete'),
+    path('components/<int:component_id>/add-to-purchase-order/', views.add_component_to_purchase_order, name='add_component_to_purchase_order'),
+    path('purchase-order-items/<int:pk>/edit/', views.purchase_order_item_edit, name='purchase_order_item_edit'),
+    path('purchase-order-items/<int:pk>/delete/', views.purchase_order_item_delete, name='purchase_order_item_delete'),
+    
     # API endpoints
     path('api/description-autocomplete/', views.description_autocomplete, name='description_autocomplete'),
     path('api/manufacturer-autocomplete/', views.manufacturer_autocomplete, name='manufacturer_autocomplete'),

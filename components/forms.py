@@ -1,5 +1,5 @@
 from django import forms
-from .models import Component
+from .models import Component, ComponentSupplier
 
 
 class ComponentForm(forms.ModelForm):
@@ -13,6 +13,7 @@ class ComponentForm(forms.ModelForm):
             'manufacturer',
             'supplier_name',
             'supplier_part_number',
+            'supplier_webpage',
             'cost',
             'quantity_in_stock',
             'minimum_stock_level',
@@ -47,6 +48,10 @@ class ComponentForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Supplier part number'
             }),
+            'supplier_webpage': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://example.com/product-page'
+            }),
             'cost': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
@@ -69,5 +74,58 @@ class ComponentForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 3,
                 'placeholder': 'Additional notes about this component'
+            }),
+        }
+
+
+class ComponentSupplierForm(forms.ModelForm):
+    """Form for creating and updating suppliers."""
+    
+    class Meta:
+        model = ComponentSupplier
+        fields = [
+            'supplier',
+            'website',
+            'contact_email',
+            'phone_number',
+            'account_name',
+            'account_number',
+            'address',
+            'notes'
+        ]
+        widgets = {
+            'supplier': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Digikey, Mouser, Farnell'
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://www.supplier-website.com'
+            }),
+            'contact_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'contact@supplier.com'
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+1 555-123-4567'
+            }),
+            'account_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Your company name'
+            }),
+            'account_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Your account number'
+            }),
+            'address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Supplier address'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Additional notes about this supplier'
             }),
         }

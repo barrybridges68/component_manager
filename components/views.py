@@ -6,7 +6,7 @@ from django.db.models.functions import Coalesce
 from django.db import models
 from django.http import JsonResponse
 from .models import Component, ComponentDescription, ComponentManufacturer, ComponentSupplier
-from .forms import ComponentForm
+from .forms import ComponentForm, ComponentSupplierForm
 
 
 def component_list(request):
@@ -203,3 +203,125 @@ def supplier_autocomplete(request):
         suppliers = ComponentSupplier.objects.all()[:10].values_list('supplier', flat=True)
     
     return JsonResponse(list(suppliers), safe=False)
+
+
+def supplier_list(request):
+    """Display list of all suppliers with search and filtering."""
+    search_query = request.GET.get('search', '')
+    sort_by = request.GET.get('sort', 'supplier')
+    order = request.GET.get('order', 'asc')
+    per_page = request.GET.get('per_page', '20')
+    
+    # Validate per_page parameter
+    try:
+        per_page = int(per_page)
+        if per_page not in [10, 20, 50, 100]:
+            per_page = 20
+    except ValueError:
+        per_page = 20
+    
+    # Base queryset
+    suppliers = ComponentSupplier.objects.all()
+    
+    # Search functionality
+    if search_query:
+        suppliers = suppliers.filter(
+            Q(supplier__icontains=search_query) |
+            Q(contact_email__icontains=search_query) |
+            Q(phone_number__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
+    
+    # Sorting
+    valid_sort_fields = ['supplier', 'contact_email', 'usage_count', 'date_added']
+    if sort_by not in valid_sort_fields:
+        sort_by = 'supplier'
+    
+    if order == 'desc':
+        sort_by = f'-{sort_by}'
+    
+    suppliers = suppliers.order_by(sort_by)
+    
+    # Pagination
+    paginator = Paginator(suppliers, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'current_sort': request.GET.get('sort', 'supplier'),
+        'current_order': request.GET.get('order', 'asc'),
+        'per_page': per_page,
+        'total_suppliers': suppliers.count(),
+    }
+    
+    return render(request, 'components/supplier_list.html', context)
+
+
+def supplier_detail(request, pk):
+    """Display details of a specific supplier."""
+    supplier = get_object_or_404(ComponentSupplier, pk=pk)
+    
+    # Get components using this supplier
+    components = Component.objects.filter(supplier_name=supplier.supplier)
+    
+    context = {
+        'supplier': supplier,
+        'components': components,
+        'component_count': components.count(),
+    }
+    
+    return render(request, 'components/supplier_detail.html', context)
+
+
+def supplier_create(request):
+    """Create a new supplier."""
+    if request.method == 'POST':
+        form = ComponentSupplierForm(request.POST)
+        if form.is_valid():
+            supplier = form.save()
+            messages.success(request, f'Supplier "{supplier.supplier}" was created successfully.')
+            return redirect('components:supplier_detail', pk=supplier.pk)
+    else:
+        form = ComponentSupplierForm()
+    
+    return render(request, 'components/supplier_form.html', {
+        'form': form,
+        'title': 'Add New Supplier'
+    })
+
+
+def supplier_update(request, pk):
+    """Update an existing supplier."""
+    supplier = get_object_or_404(ComponentSupplier, pk=pk)
+    
+    if request.method == 'POST':
+        form = ComponentSupplierForm(request.POST, instance=supplier)
+        if form.is_valid():
+            supplier = form.save()
+            messages.success(request, f'Supplier "{supplier.supplier}" was updated successfully.')
+            return redirect('components:supplier_detail', pk=supplier.pk)
+    else:
+        form = ComponentSupplierForm(instance=supplier)
+    
+    return render(request, 'components/supplier_form.html', {
+        'form': form,
+        'supplier': supplier,
+        'title': f'Edit {supplier.supplier}'
+    })
+
+
+def supplier_delete(request, pk):
+    """Delete a supplier."""
+    supplier = get_object_or_404(ComponentSupplier, pk=pk)
+    
+    if request.method == 'POST':
+        supplier_name = supplier.supplier
+        supplier.delete()
+        messages.success(request, f'Supplier "{supplier_name}" was deleted successfully.')
+        return redirect('components:supplier_list')
+    
+    return render(request, 'components/supplier_confirm_delete.html', {
+        'supplier': supplier
+    })

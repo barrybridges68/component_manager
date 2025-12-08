@@ -62,6 +62,17 @@
                 </div>
                 {% endif %}
                 
+                {% if component.supplier_webpage %}
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Supplier Page:</strong></div>
+                    <div class="col-sm-9">
+                        <a href="{{ component.supplier_webpage }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-box-arrow-up-right"></i> Visit Supplier Page
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                
                 {% if component.location %}
                 <div class="row mb-3">
                     <div class="col-sm-3"><strong>Location:</strong></div>
@@ -106,6 +117,13 @@
                     <div class="col-sm-6"><strong>Minimum Level:</strong></div>
                     <div class="col-sm-6">{{ component.minimum_stock_level }}</div>
                 </div>
+                
+                {% if component.cost %}
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Unit Cost:</strong></div>
+                    <div class="col-sm-6">${{ component.cost }}</div>
+                </div>
+                {% endif %}
                 
                 <div class="row mb-3">
                     <div class="col-sm-6"><strong>Status:</strong></div>

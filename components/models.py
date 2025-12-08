@@ -29,12 +29,22 @@ class ComponentManufacturer(models.Model):
 
 class ComponentSupplier(models.Model):
     """Model to store unique component suppliers for autocomplete."""
-    supplier = models.CharField(max_length=100, unique=True)
+    supplier = models.CharField(max_length=100, unique=True, verbose_name="Supplier Name")
+    website = models.URLField(blank=True, null=True, verbose_name="Website")
+    contact_email = models.EmailField(blank=True, null=True, verbose_name="Contact Email")
+    phone_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Phone Number")
+    account_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Account Name", help_text="Your account name with this supplier")
+    account_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Account Number", help_text="Your account number with this supplier")
+    address = models.TextField(blank=True, null=True, verbose_name="Address")
+    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
     usage_count = models.PositiveIntegerField(default=1)
     date_added = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['-usage_count', 'supplier']
+        verbose_name = 'Supplier'
+        verbose_name_plural = 'Suppliers'
     
     def __str__(self):
         return self.supplier
@@ -74,6 +84,12 @@ class Component(models.Model):
         blank=True,
         null=True,
         help_text="Supplier's part number"
+    )
+    
+    supplier_webpage = models.URLField(
+        blank=True,
+        null=True,
+        help_text="Link to supplier's product page"
     )
     
     cost = models.DecimalField(

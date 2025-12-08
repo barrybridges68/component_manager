@@ -5,8 +5,8 @@ from django.db.models import Q, F, Sum, Value, Case, When, IntegerField
 from django.db.models.functions import Coalesce
 from django.db import models
 from django.http import JsonResponse
-from .models import Component, ComponentDescription, ComponentManufacturer, ComponentSupplier, Todo, PurchaseOrder, PurchaseOrderItem
-from .forms import ComponentForm, ComponentSupplierForm, TodoForm, PurchaseOrderForm, PurchaseOrderItemForm, AddToPurchaseOrderForm, PurchaseOrderItemEditForm
+from .models import Component, ComponentDescription, ComponentManufacturer, ComponentSupplier, Todo, PurchaseOrder, PurchaseOrderItem, Event
+from .forms import ComponentForm, ComponentSupplierForm, TodoForm, PurchaseOrderForm, PurchaseOrderItemForm, AddToPurchaseOrderForm, PurchaseOrderItemEditForm, EventForm
 
 
 def component_list(request):
@@ -744,3 +744,245 @@ def purchase_order_item_delete(request, pk):
     }
     
     return render(request, 'components/purchase_order_item_confirm_delete.html', context)
+
+
+def calendar_view(request):
+    """Display a weekly or monthly calendar view."""
+    from datetime import datetime, date, timedelta
+    from collections import defaultdict
+    import calendar
+    
+    # Get view mode (week or month)
+    view_mode = request.GET.get('view', 'week')
+    today = date.today()
+    
+    if view_mode == 'month':
+        # Get month offset from query parameters
+        month_offset = int(request.GET.get('month', 0))
+        
+        # Calculate target month/year
+        target_date = today.replace(day=1) + timedelta(days=32 * month_offset)
+        target_date = target_date.replace(day=1)
+        
+        year = target_date.year
+        month = target_date.month
+        
+        # Get calendar for the month
+        cal = calendar.monthcalendar(year, month)
+        
+        # Get all events for the month
+        month_start = date(year, month, 1)
+        if month == 12:
+            month_end = date(year + 1, 1, 1)
+        else:
+            month_end = date(year, month + 1, 1)
+        
+        events = Event.objects.filter(
+            start_date__date__gte=month_start,
+            start_date__date__lt=month_end
+        ).order_by('start_date')
+        
+        # Group events by date
+        events_by_date = defaultdict(list)
+        for event in events:
+            events_by_date[event.start_date.date()].append(event)
+        
+        # Create structured data for the template
+        calendar_weeks = []
+        for week in cal:
+            week_data = []
+            for day_num in week:
+                if day_num == 0:
+                    week_data.append(None)
+                else:
+                    day_date = date(year, month, day_num)
+                    week_data.append({
+                        'date': day_date,
+                        'events': events_by_date.get(day_date, [])
+                    })
+            calendar_weeks.append(week_data)
+        
+        context = {
+            'view_mode': 'month',
+            'calendar_weeks': calendar_weeks,
+            'month_name': target_date.strftime('%B %Y'),
+            'today': today,
+            'prev_month_offset': month_offset - 1,
+            'next_month_offset': month_offset + 1,
+            'weekdays': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        }
+    else:
+        # Week view (existing code)
+        week_offset = int(request.GET.get('week', 0))
+        
+        # Calculate the current week start (Monday)
+        days_since_monday = today.weekday()
+        week_start = today - timedelta(days=days_since_monday) + timedelta(weeks=week_offset)
+        
+        # Generate the 7 days of the week
+        week_days = []
+        for i in range(7):
+            day = week_start + timedelta(days=i)
+            week_days.append(day)
+        
+        # Get events for this week
+        week_end = week_start + timedelta(days=7)
+        events = Event.objects.filter(
+            start_date__date__gte=week_start,
+            start_date__date__lt=week_end
+        ).order_by('start_date')
+        
+        # Group events by date
+        events_by_date = defaultdict(list)
+        for event in events:
+            events_by_date[event.start_date.date()].append(event)
+        
+        # Create structured data for the template
+        calendar_days = []
+        for day in week_days:
+            calendar_days.append({
+                'date': day,
+                'events': events_by_date.get(day, [])
+            })
+        
+        # Week range for display
+        week_start_str = week_start.strftime('%B %d')
+        week_end_str = (week_start + timedelta(days=6)).strftime('%B %d, %Y')
+        
+        context = {
+            'view_mode': 'week',
+            'calendar_days': calendar_days,
+            'week_start': week_start,
+            'week_end': week_start + timedelta(days=6),
+            'week_range': f"{week_start_str} - {week_end_str}",
+            'today': today,
+            'prev_week_offset': week_offset - 1,
+            'next_week_offset': week_offset + 1,
+        }
+    
+    return render(request, 'components/calendar.html', context)
+
+
+def event_list(request):
+    """Display list of all events."""
+    from datetime import datetime
+    
+    events = Event.objects.all().order_by('-start_date')
+    
+    # Filter options
+    filter_type = request.GET.get('type', '')
+    filter_status = request.GET.get('status', '')
+    
+    if filter_type:
+        events = events.filter(event_type=filter_type)
+    
+    if filter_status == 'completed':
+        events = events.filter(completed=True)
+    elif filter_status == 'pending':
+        events = events.filter(completed=False)
+    
+    context = {
+        'events': events,
+        'filter_type': filter_type,
+        'filter_status': filter_status,
+        'event_types': Event.EVENT_TYPE_CHOICES,
+    }
+    
+    return render(request, 'components/event_list.html', context)
+
+
+def event_create(request):
+    """Create a new event."""
+    from datetime import datetime, date
+    
+    # Get date from URL parameter if provided
+    date_param = request.GET.get('date')
+    initial_data = {}
+    
+    if date_param:
+        try:
+            parsed_date = datetime.strptime(date_param, '%Y-%m-%d').date()
+            initial_data['start_date'] = datetime.combine(parsed_date, datetime.min.time())
+        except ValueError:
+            pass
+    
+    if request.method == 'POST':
+        form = EventForm(request.POST)
+        if form.is_valid():
+            event = form.save()
+            messages.success(request, f'Event "{event.title}" created successfully!')
+            return redirect('components:event_detail', pk=event.pk)
+    else:
+        form = EventForm(initial=initial_data)
+    
+    context = {
+        'form': form,
+        'title': 'Create New Event',
+        'submit_text': 'Create Event'
+    }
+    
+    return render(request, 'components/event_form.html', context)
+
+
+def event_detail(request, pk):
+    """Display event details."""
+    event = get_object_or_404(Event, pk=pk)
+    
+    context = {
+        'event': event
+    }
+    
+    return render(request, 'components/event_detail.html', context)
+
+
+def event_edit(request, pk):
+    """Edit an existing event."""
+    event = get_object_or_404(Event, pk=pk)
+    
+    if request.method == 'POST':
+        form = EventForm(request.POST, instance=event)
+        if form.is_valid():
+            event = form.save()
+            messages.success(request, f'Event "{event.title}" updated successfully!')
+            return redirect('components:event_detail', pk=event.pk)
+    else:
+        form = EventForm(instance=event)
+    
+    context = {
+        'form': form,
+        'event': event,
+        'title': f'Edit Event: {event.title}',
+        'submit_text': 'Update Event'
+    }
+    
+    return render(request, 'components/event_form.html', context)
+
+
+def event_toggle_complete(request, pk):
+    """Toggle event completion status."""
+    event = get_object_or_404(Event, pk=pk)
+    event.completed = not event.completed
+    event.save()
+    
+    status = "completed" if event.completed else "pending"
+    messages.success(request, f'Event "{event.title}" marked as {status}!')
+    
+    # Redirect to the referrer or event detail
+    return redirect(request.META.get('HTTP_REFERER', 'components:event_detail'), pk=event.pk)
+
+
+def event_delete(request, pk):
+    """Delete an event."""
+    event = get_object_or_404(Event, pk=pk)
+    
+    if request.method == 'POST':
+        event_title = event.title
+        event.delete()
+        messages.success(request, f'Event "{event_title}" deleted successfully!')
+        return redirect('components:event_list')
+    
+    context = {
+        'event': event
+    }
+    
+    return render(request, 'components/event_confirm_delete.html', context)

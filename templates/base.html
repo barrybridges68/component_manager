@@ -42,12 +42,13 @@
             color: #ffffff;
         }
     </style>
+    {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-dark text-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{% url 'components:dashboard' %}">
-                <i class="bi bi-cpu"></i> Component Stock
+                <i class="bi bi-cpu"></i> Home Lab Manager
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -80,8 +81,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'components:component_create' %}">
-                            <i class="bi bi-plus-circle"></i> Add Component
+                        <a class="nav-link" href="{% url 'components:calendar' %}">
+                            <i class="fas fa-calendar-alt"></i> Calendar
                         </a>
                     </li>
                     <li class="nav-item">

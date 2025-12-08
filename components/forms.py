@@ -1,5 +1,5 @@
 from django import forms
-from .models import Component, ComponentSupplier, Todo, PurchaseOrder, PurchaseOrderItem
+from .models import Component, ComponentSupplier, Todo, PurchaseOrder, PurchaseOrderItem, Event
 
 
 class ComponentForm(forms.ModelForm):
@@ -282,4 +282,81 @@ class PurchaseOrderItemEditForm(forms.ModelForm):
         help_texts = {
             'quantity': 'Enter the quantity needed.',
             'unit_cost': 'Enter the cost per unit.',
+        }
+
+
+class EventForm(forms.ModelForm):
+    """Form for creating and updating calendar events."""
+    
+    class Meta:
+        model = Event
+        fields = [
+            'title',
+            'description',
+            'event_type',
+            'start_date',
+            'end_date',
+            'all_day',
+            'priority',
+            'location',
+            'completed'
+        ]
+        
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter event title',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Additional event details (optional)'
+            }),
+            'event_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'start_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+                'required': True
+            }),
+            'end_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'all_day': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Event location (optional)'
+            }),
+            'completed': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        
+        labels = {
+            'title': 'Event Title',
+            'description': 'Description',
+            'event_type': 'Event Type',
+            'start_date': 'Start Date & Time',
+            'end_date': 'End Date & Time',
+            'all_day': 'All Day Event',
+            'priority': 'Priority',
+            'location': 'Location',
+            'completed': 'Mark as Completed',
+        }
+        
+        help_texts = {
+            'title': 'Enter a descriptive title for your event.',
+            'description': 'Provide additional details about the event.',
+            'start_date': 'When does the event start?',
+            'end_date': 'When does the event end? (Leave blank for no end time)',
+            'all_day': 'Check if this is an all-day event.',
+            'location': 'Where is the event taking place?',
         }

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Component
+from .models import Component, Event
 
 
 @admin.register(Component)
@@ -65,3 +65,52 @@ class ComponentAdmin(admin.ModelAdmin):
     
     stock_status.allow_tags = True
     stock_status.short_description = 'Stock Status'
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    """Admin interface for Event model."""
+    
+    list_display = [
+        'title',
+        'event_type',
+        'start_date',
+        'priority',
+        'location',
+        'completed',
+        'created_at'
+    ]
+    
+    list_filter = [
+        'event_type',
+        'priority',
+        'completed',
+        'all_day',
+        'created_at'
+    ]
+    
+    search_fields = [
+        'title',
+        'description',
+        'location'
+    ]
+    
+    date_hierarchy = 'start_date'
+    
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Event Information', {
+            'fields': ('title', 'description', 'event_type', 'priority')
+        }),
+        ('Date & Time', {
+            'fields': ('start_date', 'end_date', 'all_day')
+        }),
+        ('Additional Details', {
+            'fields': ('location', 'completed')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )

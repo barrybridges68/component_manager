@@ -440,3 +440,149 @@ class PurchaseOrderItem(models.Model):
         if self.unit_cost and self.quantity:
             return self.unit_cost * self.quantity
         return 0
+
+
+class Event(models.Model):
+    """Model for calendar events."""
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+    
+    EVENT_TYPE_CHOICES = [
+        ('meeting', 'Meeting'),
+        ('delivery', 'Delivery'),
+        ('deadline', 'Deadline'),
+        ('maintenance', 'Maintenance'),
+        ('order', 'Order Due'),
+        ('reminder', 'Reminder'),
+        ('other', 'Other'),
+    ]
+    
+    title = models.CharField(
+        max_length=200,
+        help_text="Event title or description"
+    )
+    
+    description = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Additional event details"
+    )
+    
+    event_type = models.CharField(
+        max_length=20,
+        choices=EVENT_TYPE_CHOICES,
+        default='other',
+        help_text="Type of event"
+    )
+    
+    start_date = models.DateTimeField(
+        help_text="Event start date and time"
+    )
+    
+    end_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Event end date and time (optional)"
+    )
+    
+    all_day = models.BooleanField(
+        default=False,
+        help_text="Is this an all-day event?"
+    )
+    
+    priority = models.CharField(
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        default='medium',
+        help_text="Event priority level"
+    )
+    
+    location = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Event location"
+    )
+    
+    # Link to related objects (optional)
+    related_component = models.ForeignKey(
+        'Component',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text="Related component (if applicable)"
+    )
+    
+    related_purchase_order = models.ForeignKey(
+        'PurchaseOrder',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text="Related purchase order (if applicable)"
+    )
+    
+    related_supplier = models.ForeignKey(
+        'ComponentSupplier',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text="Related supplier (if applicable)"
+    )
+    
+    # Tracking fields
+    completed = models.BooleanField(
+        default=False,
+        help_text="Mark as completed"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['start_date', 'title']
+        verbose_name = 'Event'
+        verbose_name_plural = 'Events'
+    
+    def __str__(self):
+        return f"{self.title} - {self.start_date.strftime('%Y-%m-%d %H:%M')}"
+    
+    @property
+    def is_overdue(self):
+        """Check if event is overdue and not completed."""
+        return not self.completed and self.start_date < timezone.now()
+    
+    @property
+    def duration_hours(self):
+        """Calculate event duration in hours."""
+        if self.end_date:
+            delta = self.end_date - self.start_date
+            return delta.total_seconds() / 3600
+        return 0
+    
+    @property
+    def priority_badge_class(self):
+        """Return Bootstrap badge class based on priority."""
+        priority_classes = {
+            'low': 'bg-secondary',
+            'medium': 'bg-warning text-dark',
+            'high': 'bg-danger'
+        }
+        return priority_classes.get(self.priority, 'bg-secondary')
+    
+    @property
+    def type_badge_class(self):
+        """Return Bootstrap badge class based on event type."""
+        type_classes = {
+            'meeting': 'bg-info',
+            'delivery': 'bg-success',
+            'deadline': 'bg-danger',
+            'maintenance': 'bg-warning text-dark',
+            'order': 'bg-primary',
+            'reminder': 'bg-secondary',
+            'other': 'bg-dark'
+        }
+        return type_classes.get(self.event_type, 'bg-dark')

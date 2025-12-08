@@ -1,0 +1,572 @@
+{% extends 'base.html' %}
+
+{% block title %}Weekly Calendar - {{ week_range }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.calendar-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.calendar-nav {
+    position: relative;
+    z-index: 10;
+    margin-bottom: 20px;
+}
+
+.week-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background-color: #333;
+    border: 1px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+.week-header-cell {
+    background-color: #2d2d2d;
+    color: #adb5bd;
+    padding: 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.week-day-cell {
+    background-color: #1e1e1e;
+    min-height: 150px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.week-day-cell:hover {
+    background-color: #2d2d2d;
+    border: 1px solid #0d6efd;
+}
+
+.week-day-cell.today {
+    background-color: rgba(13, 110, 253, 0.1);
+    border: 2px solid #0d6efd;
+}
+
+.week-day-number {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.week-day-cell.today .week-day-number {
+    color: #0d6efd;
+}
+
+.week-day-name {
+    font-size: 0.8rem;
+    color: #adb5bd;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.week-events-mini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    margin-top: auto;
+}
+
+/* Month View Styles */
+.month-calendar {
+    margin-top: 20px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background-color: #333;
+    border: 1px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.calendar-header-cell {
+    background-color: #2d2d2d;
+    color: #adb5bd;
+    padding: 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.calendar-day-cell {
+    background-color: #1e1e1e;
+    min-height: 100px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.calendar-day-cell:hover {
+    background-color: #2d2d2d;
+    border: 1px solid #0d6efd;
+}
+
+.calendar-day-cell.today {
+    background-color: rgba(13, 110, 253, 0.1);
+    border: 2px solid #0d6efd;
+}
+
+.calendar-day-cell.empty {
+    background-color: #121212;
+    cursor: default;
+}
+
+.calendar-day-cell.empty:hover {
+    background-color: #121212;
+    border: none;
+}
+
+.day-number {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.calendar-day-cell.today .day-number {
+    color: #0d6efd;
+}
+
+.day-events-mini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.event-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.event-dot.priority-high {
+    background-color: #dc3545;
+}
+
+.event-dot.priority-medium {
+    background-color: #fd7e14;
+}
+
+.event-dot.priority-low {
+    background-color: #198754;
+}
+
+.event-more {
+    font-size: 0.7rem;
+    color: #adb5bd;
+    font-weight: 500;
+}
+
+/* Day Events Modal */
+.day-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.day-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.day-modal-content {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.day-modal-header {
+    background-color: #2d2d2d;
+    padding: 20px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.day-modal-header h3 {
+    margin: 0;
+    color: #ffffff;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #adb5bd;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    color: #ffffff;
+}
+
+.day-modal-body {
+    padding: 20px;
+}
+
+.modal-event {
+    background-color: #2d2d2d;
+    border-left: 3px solid;
+    border-radius: 6px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-event:hover {
+    background-color: #3d3d3d;
+    transform: translateX(4px);
+}
+
+.modal-event.priority-high {
+    border-left-color: #dc3545;
+}
+
+.modal-event.priority-medium {
+    border-left-color: #fd7e14;
+}
+
+.modal-event.priority-low {
+    border-left-color: #198754;
+}
+
+.modal-event.completed {
+    opacity: 0.6;
+}
+
+.modal-event-title {
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 4px;
+}
+
+.modal-event.completed .modal-event-title {
+    text-decoration: line-through;
+    color: #6c757d;
+}
+
+.modal-event-details {
+    font-size: 0.85rem;
+    color: #adb5bd;
+}
+
+.modal-no-events {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.modal-add-btn {
+    width: 100%;
+    margin-top: 10px;
+}
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="calendar-wrapper">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-calendar-{% if view_mode == 'month' %}alt{% else %}week{% endif %} me-2"></i>
+            {% if view_mode == 'month' %}Monthly{% else %}Weekly{% endif %} Calendar
+        </h1>
+        <div>
+            <div class="btn-group me-2">
+                <a href="{% url 'components:calendar' %}?view=week" 
+                   class="btn btn-sm {% if view_mode == 'week' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                    <i class="fas fa-calendar-week"></i> Week
+                </a>
+                <a href="{% url 'components:calendar' %}?view=month" 
+                   class="btn btn-sm {% if view_mode == 'month' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                    <i class="fas fa-calendar-alt"></i> Month
+                </a>
+            </div>
+            <a href="{% url 'components:event_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>New Event
+            </a>
+            <a href="{% url 'components:event_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-list me-1"></i>All Events
+            </a>
+        </div>
+    </div>
+
+    {% if view_mode == 'month' %}
+        <!-- Month Navigation -->
+        <div class="calendar-nav">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'components:calendar' %}?view=month&month={{ prev_month_offset }}" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-chevron-left me-1"></i>Previous Month
+                        </a>
+                        
+                        <h4 class="mb-0">{{ month_name }}</h4>
+                        
+                        <a href="{% url 'components:calendar' %}?view=month&month={{ next_month_offset }}" 
+                           class="btn btn-outline-secondary">
+                            Next Month<i class="fas fa-chevron-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Calendar Grid -->
+        <div class="month-calendar">
+            <div class="calendar-grid">
+                {% for day_name in weekdays %}
+                    <div class="calendar-header-cell">{{ day_name }}</div>
+                {% endfor %}
+                
+                {% for week in calendar_weeks %}
+                    {% for day_data in week %}
+                        {% if day_data %}
+                            <div class="calendar-day-cell{% if day_data.date == today %} today{% endif %}" 
+                                 onclick="showDayEvents('{{ day_data.date|date:'Y-m-d' }}', '{{ day_data.date|date:'l, F j, Y' }}')">
+                                <div class="day-number">{{ day_data.date.day }}</div>
+                                <div class="day-events-mini">
+                                    {% for event in day_data.events|slice:":3" %}
+                                        <div class="event-dot priority-{{ event.priority }}" 
+                                             title="{{ event.title }}"></div>
+                                    {% endfor %}
+                                    {% if day_data.events|length > 3 %}
+                                        <div class="event-more">+{{ day_data.events|length|add:"-3" }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="day-events-data" style="display:none;">
+                                    {% for event in day_data.events %}
+                                        <div class="event-data" 
+                                             data-id="{{ event.pk }}"
+                                             data-title="{{ event.title }}"
+                                             data-priority="{{ event.priority }}"
+                                             data-completed="{{ event.completed }}"
+                                             data-time="{% if event.all_day %}All Day{% else %}{{ event.start_date|time:'g:i A' }}{% endif %}"
+                                             data-location="{{ event.location|default:'' }}">
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="calendar-day-cell empty"></div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <!-- Week Navigation -->
+        <div class="calendar-nav">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'components:calendar' %}?view=week&week={{ prev_week_offset }}" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-chevron-left me-1"></i>Previous Week
+                        </a>
+                        
+                        <h4 class="mb-0">{{ week_range }}</h4>
+                        
+                        <a href="{% url 'components:calendar' %}?view=week&week={{ next_week_offset }}" 
+                           class="btn btn-outline-secondary">
+                            Next Week<i class="fas fa-chevron-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Calendar -->
+        <div class="week-calendar">
+            {% for day_data in calendar_days %}
+                <div class="week-day-cell{% if day_data.date == today %} today{% endif %}" 
+                     onclick="showDayEvents('{{ day_data.date|date:'Y-m-d' }}', '{{ day_data.date|date:'l, F j, Y' }}')">
+                    <div class="week-day-name">{{ day_data.date|date:"D" }}</div>
+                    <div class="week-day-number">{{ day_data.date.day }}</div>
+                    <div class="week-events-mini">
+                        {% for event in day_data.events|slice:":5" %}
+                            <div class="event-dot priority-{{ event.priority }}" 
+                                 title="{{ event.title }}"></div>
+                        {% endfor %}
+                        {% if day_data.events|length > 5 %}
+                            <div class="event-more">+{{ day_data.events|length|add:"-5" }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="day-events-data" style="display:none;">
+                        {% for event in day_data.events %}
+                            <div class="event-data" 
+                                 data-id="{{ event.pk }}"
+                                 data-title="{{ event.title }}"
+                                 data-priority="{{ event.priority }}"
+                                 data-completed="{{ event.completed }}"
+                                 data-time="{% if event.all_day %}All Day{% else %}{{ event.start_date|time:'g:i A' }}{% endif %}"
+                                 data-location="{{ event.location|default:'' }}">
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Day Events Modal -->
+<div id="dayEventsModal" class="day-modal" onclick="if(event.target === this) closeDayModal()">
+    <div class="day-modal-content">
+        <div class="day-modal-header">
+            <h3 id="modalDayTitle"></h3>
+            <button class="modal-close" onclick="closeDayModal()">&times;</button>
+        </div>
+        <div class="day-modal-body" id="modalEventsContainer">
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleDay(headerElement) {
+    const dayCard = headerElement.closest('.day-card');
+    dayCard.classList.toggle('expanded');
+    dayCard.classList.toggle('collapsed');
+}
+
+function showDayEvents(dateStr, dateDisplay) {
+    const modal = document.getElementById('dayEventsModal');
+    const titleEl = document.getElementById('modalDayTitle');
+    const containerEl = document.getElementById('modalEventsContainer');
+    
+    // Find the day cell
+    const dayCells = document.querySelectorAll('.calendar-day-cell');
+    let eventData = [];
+    
+    for (let cell of dayCells) {
+        const dataContainer = cell.querySelector('.day-events-data');
+        if (dataContainer) {
+            const events = dataContainer.querySelectorAll('.event-data');
+            if (events.length > 0) {
+                const firstEvent = events[0];
+                const cellDate = cell.querySelector('.day-number');
+                if (dataContainer.parentElement === cell) {
+                    events.forEach(event => {
+                        eventData.push({
+                            id: event.dataset.id,
+                            title: event.dataset.title,
+                            priority: event.dataset.priority,
+                            completed: event.dataset.completed === 'True',
+                            time: event.dataset.time,
+                            location: event.dataset.location
+                        });
+                    });
+                    break;
+                }
+            }
+        }
+        if (cell.onclick && cell.onclick.toString().includes(dateStr)) {
+            const dataContainer = cell.querySelector('.day-events-data');
+            if (dataContainer) {
+                const events = dataContainer.querySelectorAll('.event-data');
+                eventData = [];
+                events.forEach(event => {
+                    eventData.push({
+                        id: event.dataset.id,
+                        title: event.dataset.title,
+                        priority: event.dataset.priority,
+                        completed: event.dataset.completed === 'True',
+                        time: event.dataset.time,
+                        location: event.dataset.location
+                    });
+                });
+            }
+            break;
+        }
+    }
+    
+    titleEl.textContent = dateDisplay;
+    
+    if (eventData.length > 0) {
+        let html = '';
+        eventData.forEach(event => {
+            const completedClass = event.completed ? ' completed' : '';
+            html += `
+                <div class="modal-event priority-${event.priority}${completedClass}" 
+                     onclick="window.location.href='/events/${event.id}/'">
+                    <div class="modal-event-title">${event.title}</div>
+                    <div class="modal-event-details">
+                        <i class="fas fa-clock me-1"></i>${event.time}
+                        ${event.location ? `<i class="fas fa-map-marker-alt ms-3 me-1"></i>${event.location}` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        html += `<a href="/events/add/?date=${dateStr}" class="btn btn-primary modal-add-btn">
+                    <i class="fas fa-plus me-1"></i>Add Event
+                 </a>`;
+        containerEl.innerHTML = html;
+    } else {
+        containerEl.innerHTML = `
+            <div class="modal-no-events">
+                <i class="fas fa-calendar-plus fa-3x mb-3" style="color: #6c757d;"></i>
+                <p>No events scheduled for this day</p>
+                <a href="/events/add/?date=${dateStr}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Add Event
+                </a>
+            </div>
+        `;
+    }
+    
+    modal.classList.add('show');
+}
+
+function closeDayModal() {
+    document.getElementById('dayEventsModal').classList.remove('show');
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDayModal();
+    }
+});
+</script>
+{% endblock %}

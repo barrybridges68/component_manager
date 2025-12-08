@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ event.title }} - Event Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-calendar-check me-2"></i>{{ event.title }}</h1>
+        <div>
+            <a href="{% url 'components:event_edit' event.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i>Edit
+            </a>
+            <a href="{% url 'components:event_toggle_complete' event.pk %}" 
+               class="btn btn-{% if event.completed %}warning{% else %}success{% endif %}">
+                {% if event.completed %}
+                    <i class="fas fa-undo me-1"></i>Mark Pending
+                {% else %}
+                    <i class="fas fa-check me-1"></i>Mark Complete
+                {% endif %}
+            </a>
+            <a href="{% url 'components:event_delete' event.pk %}" class="btn btn-outline-danger">
+                <i class="fas fa-trash me-1"></i>Delete
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Event Information -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Event Details</h5>
+                    <div>
+                        <span class="badge {{ event.priority_badge_class }} me-2">
+                            {{ event.get_priority_display }} Priority
+                        </span>
+                        <span class="badge {{ event.type_badge_class }}">
+                            {{ event.get_event_type_display }}
+                        </span>
+                        {% if event.completed %}
+                            <span class="badge bg-success ms-2">
+                                <i class="fas fa-check me-1"></i>Completed
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if event.description %}
+                        <div class="mb-4">
+                            <h6>Description</h6>
+                            <p>{{ event.description|linebreaks }}</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Start Date & Time</h6>
+                            {% if event.all_day %}
+                                <p><i class="fas fa-calendar me-2"></i>{{ event.start_date|date:"F j, Y" }} (All Day)</p>
+                            {% else %}
+                                <p><i class="fas fa-calendar me-2"></i>{{ event.start_date|date:"F j, Y" }}</p>
+                                <p><i class="fas fa-clock me-2"></i>{{ event.start_date|time:"g:i A" }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        {% if event.end_date %}
+                            <div class="col-md-6">
+                                <h6>End Date & Time</h6>
+                                {% if event.all_day %}
+                                    <p><i class="fas fa-calendar me-2"></i>{{ event.end_date|date:"F j, Y" }} (All Day)</p>
+                                {% else %}
+                                    <p><i class="fas fa-calendar me-2"></i>{{ event.end_date|date:"F j, Y" }}</p>
+                                    <p><i class="fas fa-clock me-2"></i>{{ event.end_date|time:"g:i A" }}</p>
+                                {% endif %}
+                                
+                                {% if event.duration_hours %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-hourglass-half me-1"></i>Duration: {{ event.duration_hours|floatformat:1 }} hours
+                                        </small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {% if event.location %}
+                        <div class="mt-3">
+                            <h6>Location</h6>
+                            <p><i class="fas fa-map-marker-alt me-2"></i>{{ event.location }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+            <!-- Related Information -->
+        <div class="col-lg-4">
+            <!-- Related Items -->
+            {% if event.related_component or event.related_purchase_order or event.related_supplier %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-link me-2"></i>Related Items</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if event.related_component %}
+                            <div class="mb-3">
+                                <h6 class="text-muted">Component</h6>
+                                <a href="{% url 'components:component_detail' event.related_component.pk %}" 
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-microchip me-1"></i>{{ event.related_component.description }}
+                                </a>
+                                <div class="small text-muted mt-1">
+                                    {{ event.related_component.manufacturer }} | {{ event.related_component.value }}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if event.related_purchase_order %}
+                            <div class="mb-3">
+                                <h6 class="text-muted">Purchase Order</h6>
+                                <a href="{% url 'components:purchase_order_detail' event.related_purchase_order.pk %}" 
+                                   class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-shopping-cart me-1"></i>{{ event.related_purchase_order.order_number }}
+                                </a>
+                                <div class="small text-muted mt-1">
+                                    Status: {{ event.related_purchase_order.get_status_display }}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if event.related_supplier %}
+                            <div class="mb-3">
+                                <h6 class="text-muted">Supplier</h6>
+                                <a href="{% url 'components:supplier_detail' event.related_supplier.pk %}" 
+                                   class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-industry me-1"></i>{{ event.related_supplier.company_name }}
+                                </a>
+                                <div class="small text-muted mt-1">
+                                    {% if event.related_supplier.contact_person %}
+                                        Contact: {{ event.related_supplier.contact_person }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'components:calendar' %}?month={{ event.start_date.month }}&year={{ event.start_date.year }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-calendar me-1"></i>View Calendar
+                        </a>
+                        <a href="{% url 'components:event_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-list me-1"></i>All Events
+                        </a>
+                        {% if event.related_component %}
+                            <a href="{% url 'components:component_list' %}?search={{ event.related_component.description }}" 
+                               class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-search me-1"></i>Similar Components
+                            </a>
+                        {% endif %}
+                        {% if event.related_supplier %}
+                            <a href="{% url 'components:supplier_list' %}" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-industry me-1"></i>All Suppliers
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Event navigation">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'components:event_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Events
+                    </a>
+                    <a href="{% url 'components:calendar' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-alt me-1"></i>Calendar
+                    </a>
+                    <a href="{% url 'components:dashboard' %}" class="btn btn-outline-success">
+                        <i class="fas fa-home me-1"></i>Dashboard
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}

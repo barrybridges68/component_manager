@@ -35,6 +35,17 @@ urlpatterns = [
     path('purchase-order-items/<int:pk>/edit/', views.purchase_order_item_edit, name='purchase_order_item_edit'),
     path('purchase-order-items/<int:pk>/delete/', views.purchase_order_item_delete, name='purchase_order_item_delete'),
     
+    # Calendar
+    path('calendar/', views.calendar_view, name='calendar'),
+    
+    # Event URLs
+    path('events/', views.event_list, name='event_list'),
+    path('events/<int:pk>/', views.event_detail, name='event_detail'),
+    path('events/add/', views.event_create, name='event_create'),
+    path('events/<int:pk>/edit/', views.event_edit, name='event_edit'),
+    path('events/<int:pk>/delete/', views.event_delete, name='event_delete'),
+    path('events/<int:pk>/toggle-complete/', views.event_toggle_complete, name='event_toggle_complete'),
+    
     # API endpoints
     path('api/description-autocomplete/', views.description_autocomplete, name='description_autocomplete'),
     path('api/manufacturer-autocomplete/', views.manufacturer_autocomplete, name='manufacturer_autocomplete'),

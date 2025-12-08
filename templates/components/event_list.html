@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Events{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-calendar-check me-2"></i>Events</h1>
+        <div>
+            <a href="{% url 'components:event_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>New Event
+            </a>
+            <a href="{% url 'components:calendar' %}" class="btn btn-outline-primary">
+                <i class="fas fa-calendar-alt me-1"></i>Calendar View
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Search events...">
+                </div>
+                <div class="col-md-2">
+                    <label for="priority" class="form-label">Priority</label>
+                    <select class="form-select" id="priority" name="priority">
+                        <option value="">All Priorities</option>
+                        {% for value, label in priority_choices %}
+                            <option value="{{ value }}"{% if value == priority_filter %} selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="event_type" class="form-label">Type</label>
+                    <select class="form-select" id="event_type" name="event_type">
+                        <option value="">All Types</option>
+                        {% for value, label in event_type_choices %}
+                            <option value="{{ value }}"{% if value == event_type_filter %} selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="completed" class="form-label">Status</label>
+                    <select class="form-select" id="completed" name="completed">
+                        <option value="">All</option>
+                        <option value="pending"{% if completed_filter == 'pending' %} selected{% endif %}>
+                            Pending
+                        </option>
+                        <option value="completed"{% if completed_filter == 'completed' %} selected{% endif %}>
+                            Completed
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                    <a href="{% url 'components:event_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Events List -->
+    {% if page_obj %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Type</th>
+                                <th>Date & Time</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Related To</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in page_obj %}
+                                <tr{% if event.completed %} class="table-secondary"{% endif %}>
+                                    <td>
+                                        <div class="fw-bold">
+                                            <a href="{% url 'components:event_detail' event.pk %}" 
+                                               class="text-decoration-none">
+                                                {{ event.title }}
+                                            </a>
+                                        </div>
+                                        {% if event.description %}
+                                            <div class="text-muted small">
+                                                {{ event.description|truncatechars:50 }}
+                                            </div>
+                                        {% endif %}
+                                        {% if event.location %}
+                                            <div class="text-muted small">
+                                                <i class="fas fa-map-marker-alt me-1"></i>{{ event.location }}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ event.type_badge_class }}">
+                                            {{ event.get_event_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if event.all_day %}
+                                            <div>{{ event.start_date|date:"M j, Y" }}</div>
+                                            <small class="text-muted">All Day</small>
+                                        {% else %}
+                                            <div>{{ event.start_date|date:"M j, Y" }}</div>
+                                            <small class="text-muted">
+                                                {{ event.start_date|time:"g:i A" }}
+                                                {% if event.end_date %}
+                                                    - {{ event.end_date|time:"g:i A" }}
+                                                {% endif %}
+                                            </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ event.priority_badge_class }}">
+                                            {{ event.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if event.completed %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i>Completed
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock me-1"></i>Pending
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-1">
+                                            {% if event.related_component %}
+                                                <a href="{% url 'components:component_detail' event.related_component.pk %}" 
+                                                   class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-microchip me-1"></i>{{ event.related_component.description|truncatechars:20 }}
+                                                </a>
+                                            {% endif %}
+                                            {% if event.related_purchase_order %}
+                                                <a href="{% url 'components:purchase_order_detail' event.related_purchase_order.pk %}" 
+                                                   class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-shopping-cart me-1"></i>PO {{ event.related_purchase_order.order_number }}
+                                                </a>
+                                            {% endif %}
+                                            {% if event.related_supplier %}
+                                                <a href="{% url 'components:supplier_detail' event.related_supplier.pk %}" 
+                                                   class="btn btn-sm btn-outline-warning">
+                                                    <i class="fas fa-industry me-1"></i>{{ event.related_supplier.company_name|truncatechars:15 }}
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'components:event_edit' event.pk %}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'components:event_toggle_complete' event.pk %}" 
+                                               class="btn btn-sm btn-outline-{% if event.completed %}warning{% else %}success{% endif %}">
+                                                {% if event.completed %}
+                                                    <i class="fas fa-undo"></i>
+                                                {% else %}
+                                                    <i class="fas fa-check"></i>
+                                                {% endif %}
+                                            </a>
+                                            <a href="{% url 'components:event_delete' event.pk %}" 
+                                               class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Events pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if priority_filter %}priority={{ priority_filter }}&{% endif %}{% if event_type_filter %}event_type={{ event_type_filter }}&{% endif %}{% if completed_filter %}completed={{ completed_filter }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if priority_filter %}priority={{ priority_filter }}&{% endif %}{% if event_type_filter %}event_type={{ event_type_filter }}&{% endif %}{% if completed_filter %}completed={{ completed_filter }}&{% endif %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if priority_filter %}priority={{ priority_filter }}&{% endif %}{% if event_type_filter %}event_type={{ event_type_filter }}&{% endif %}{% if completed_filter %}completed={{ completed_filter }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="py-5">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h4>No events found</h4>
+                    <p class="text-muted">There are no events matching your criteria.</p>
+                    <a href="{% url 'components:event_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Create First Event
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

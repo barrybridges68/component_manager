@@ -2,6 +2,14 @@
 
 {% block title %}Components - Component Stock Management{% endblock %}
 
+{% block extra_css %}
+<style>
+    .form-select, .form-control {
+        height: 38px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -25,13 +33,28 @@
         </form>
     </div>
     <div class="col-md-6">
-        <form method="get" class="d-flex">
-            <select name="status" class="form-control me-2">
-                <option value="">All Status</option>
-                <option value="in_stock" {% if status_filter == 'in_stock' %}selected{% endif %}>In Stock</option>
-                <option value="low_stock" {% if status_filter == 'low_stock' %}selected{% endif %}>Low Stock</option>
-                <option value="out_of_stock" {% if status_filter == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
-            </select>
+        <form method="get" class="d-flex align-items-center">
+            <div class="form-check me-3">
+                <input class="form-check-input" type="checkbox" name="in_stock" id="inStockCheck" 
+                       {% if 'in_stock' in status_filters %}checked{% endif %}>
+                <label class="form-check-label" for="inStockCheck">
+                    In Stock
+                </label>
+            </div>
+            <div class="form-check me-3">
+                <input class="form-check-input" type="checkbox" name="low_stock" id="lowStockCheck" 
+                       {% if 'low_stock' in status_filters %}checked{% endif %}>
+                <label class="form-check-label" for="lowStockCheck">
+                    Low Stock
+                </label>
+            </div>
+            <div class="form-check me-3">
+                <input class="form-check-input" type="checkbox" name="out_of_stock" id="outOfStockCheck" 
+                       {% if 'out_of_stock' in status_filters %}checked{% endif %}>
+                <label class="form-check-label" for="outOfStockCheck">
+                    Out of Stock
+                </label>
+            </div>
             <input type="hidden" name="search" value="{{ search_query }}">
             <button type="submit" class="btn btn-outline-secondary">
                 <i class="bi bi-funnel"></i> Filter
@@ -56,7 +79,7 @@
                                         <input type="checkbox" id="selectAll" class="form-check-input">
                                     </th>
                                     <th>
-                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=description&order={% if current_sort == 'description' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if 'in_stock' in status_filters %}in_stock=on&{% endif %}{% if 'low_stock' in status_filters %}low_stock=on&{% endif %}{% if 'out_of_stock' in status_filters %}out_of_stock=on&{% endif %}sort=description&order={% if current_sort == 'description' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
                                             Description
                                             {% if current_sort == 'description' %}
                                                 {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
@@ -64,7 +87,7 @@
                                         </a>
                                     </th>
                                     <th>
-                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=value&order={% if current_sort == 'value' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if 'in_stock' in status_filters %}in_stock=on&{% endif %}{% if 'low_stock' in status_filters %}low_stock=on&{% endif %}{% if 'out_of_stock' in status_filters %}out_of_stock=on&{% endif %}sort=value&order={% if current_sort == 'value' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
                                             Value
                                             {% if current_sort == 'value' %}
                                                 {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
@@ -72,7 +95,7 @@
                                         </a>
                                     </th>
                                     <th>
-                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=manufacturer&order={% if current_sort == 'manufacturer' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if 'in_stock' in status_filters %}in_stock=on&{% endif %}{% if 'low_stock' in status_filters %}low_stock=on&{% endif %}{% if 'out_of_stock' in status_filters %}out_of_stock=on&{% endif %}sort=manufacturer&order={% if current_sort == 'manufacturer' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
                                             Manufacturer
                                             {% if current_sort == 'manufacturer' %}
                                                 {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
@@ -80,15 +103,15 @@
                                         </a>
                                     </th>
                                     <th>
-                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=supplier_name&order={% if current_sort == 'supplier_name' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
-                                            Supplier
-                                            {% if current_sort == 'supplier_name' %}
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if 'in_stock' in status_filters %}in_stock=on&{% endif %}{% if 'low_stock' in status_filters %}low_stock=on&{% endif %}{% if 'out_of_stock' in status_filters %}out_of_stock=on&{% endif %}sort=package_type&order={% if current_sort == 'package_type' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                            Package Type
+                                            {% if current_sort == 'package_type' %}
                                                 {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
                                             {% endif %}
                                         </a>
                                     </th>
                                     <th>
-                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=supplier_part_number&order={% if current_sort == 'supplier_part_number' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if 'in_stock' in status_filters %}in_stock=on&{% endif %}{% if 'low_stock' in status_filters %}low_stock=on&{% endif %}{% if 'out_of_stock' in status_filters %}out_of_stock=on&{% endif %}sort=supplier_part_number&order={% if current_sort == 'supplier_part_number' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
                                             Supplier Part #
                                             {% if current_sort == 'supplier_part_number' %}
                                                 {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
@@ -96,7 +119,7 @@
                                         </a>
                                     </th>
                                     <th>
-                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=cost&order={% if current_sort == 'cost' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if 'in_stock' in status_filters %}in_stock=on&{% endif %}{% if 'low_stock' in status_filters %}low_stock=on&{% endif %}{% if 'out_of_stock' in status_filters %}out_of_stock=on&{% endif %}sort=cost&order={% if current_sort == 'cost' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
                                             Unit Cost
                                             {% if current_sort == 'cost' %}
                                                 {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
@@ -104,7 +127,7 @@
                                         </a>
                                     </th>
                                     <th>
-                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=quantity_in_stock&order={% if current_sort == 'quantity_in_stock' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if 'in_stock' in status_filters %}in_stock=on&{% endif %}{% if 'low_stock' in status_filters %}low_stock=on&{% endif %}{% if 'out_of_stock' in status_filters %}out_of_stock=on&{% endif %}sort=quantity_in_stock&order={% if current_sort == 'quantity_in_stock' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
                                             Stock
                                             {% if current_sort == 'quantity_in_stock' %}
                                                 {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
@@ -113,7 +136,7 @@
                                     </th>
                                     <th>Status</th>
                                     <th>
-                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort=location&order={% if current_sort == 'location' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
+                                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if 'in_stock' in status_filters %}in_stock=on&{% endif %}{% if 'low_stock' in status_filters %}low_stock=on&{% endif %}{% if 'out_of_stock' in status_filters %}out_of_stock=on&{% endif %}sort=location&order={% if current_sort == 'location' and current_order == 'asc' %}desc{% else %}asc{% endif %}&per_page={{ per_page }}" class="text-decoration-none" style="color: #1e3a8a;">
                                             Location
                                             {% if current_sort == 'location' %}
                                                 {% if current_order == 'asc' %}<i class="bi bi-caret-up-fill"></i>{% else %}<i class="bi bi-caret-down-fill"></i>{% endif %}
@@ -136,7 +159,7 @@
                                     </td>
                                     <td>{{ component.value|default:"-" }}</td>
                                     <td>{{ component.manufacturer|default:"-" }}</td>
-                                    <td>{{ component.supplier_name|default:"-" }}</td>
+                                    <td>{{ component.package_type|default:"-" }}</td>
                                     <td>{{ component.supplier_part_number|default:"-" }}</td>
                                     <td>
                                         {% if component.cost %}
@@ -202,7 +225,7 @@
                                 <ul class="pagination justify-content-center mb-0">
                                     {% if page_obj.has_previous %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_order %}&order={{ current_order }}{% endif %}&per_page={{ per_page }}">Previous</a>
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if 'in_stock' in status_filters %}&in_stock=on{% endif %}{% if 'low_stock' in status_filters %}&low_stock=on{% endif %}{% if 'out_of_stock' in status_filters %}&out_of_stock=on{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_order %}&order={{ current_order }}{% endif %}&per_page={{ per_page }}">Previous</a>
                                         </li>
                                     {% endif %}
                                     
@@ -213,14 +236,14 @@
                                             </li>
                                         {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_order %}&order={{ current_order }}{% endif %}&per_page={{ per_page }}">{{ num }}</a>
+                                                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if 'in_stock' in status_filters %}&in_stock=on{% endif %}{% if 'low_stock' in status_filters %}&low_stock=on{% endif %}{% if 'out_of_stock' in status_filters %}&out_of_stock=on{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_order %}&order={{ current_order }}{% endif %}&per_page={{ per_page }}">{{ num }}</a>
                                             </li>
                                         {% endif %}
                                     {% endfor %}
                                     
                                     {% if page_obj.has_next %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}&per_page={{ per_page }}">Next</a>
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if 'in_stock' in status_filters %}&in_stock=on{% endif %}{% if 'low_stock' in status_filters %}&low_stock=on{% endif %}{% if 'out_of_stock' in status_filters %}&out_of_stock=on{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_order %}&order={{ current_order }}{% endif %}&per_page={{ per_page }}">Next</a>
                                         </li>
                                     {% endif %}
                                 </ul>
@@ -235,7 +258,9 @@
                                     <option value="100" {% if per_page == 100 %}selected{% endif %}>100 per page</option>
                                 </select>
                                 <input type="hidden" name="search" value="{{ search_query }}">
-                                <input type="hidden" name="status" value="{{ status_filter }}">
+                                {% if 'in_stock' in status_filters %}<input type="hidden" name="in_stock" value="on">{% endif %}
+                                {% if 'low_stock' in status_filters %}<input type="hidden" name="low_stock" value="on">{% endif %}
+                                {% if 'out_of_stock' in status_filters %}<input type="hidden" name="out_of_stock" value="on">{% endif %}
                                 <input type="hidden" name="sort" value="{{ current_sort }}">
                                 <input type="hidden" name="order" value="{{ current_order }}">
                             </form>

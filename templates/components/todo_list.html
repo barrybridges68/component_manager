@@ -120,63 +120,60 @@
 <div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Active Todo Items</h5>
-            </div>
-            <div class="card-body p-0">
+            <div class="card-body">
                 {% if page_obj %}
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
+                    <table class="table table-dark table-striped table-hover">
+                        <thead class="table-secondary">
                             <tr>
                                 <th>
                                     <a href="?sort=item&order={% if current_sort == 'item' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&per_page={{ per_page }}" 
-                                       class="text-decoration-none text-dark">
+                                       class="text-decoration-none" style="color: #1e3a8a;">
                                         Item
                                         {% if current_sort == 'item' %}
                                             {% if current_order == 'asc' %}
-                                                <i class="bi bi-arrow-up"></i>
+                                                <i class="bi bi-caret-up-fill"></i>
                                             {% else %}
-                                                <i class="bi bi-arrow-down"></i>
+                                                <i class="bi bi-caret-down-fill"></i>
                                             {% endif %}
                                         {% endif %}
                                     </a>
                                 </th>
                                 <th>
                                     <a href="?sort=priority&order={% if current_sort == 'priority' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&per_page={{ per_page }}" 
-                                       class="text-decoration-none text-dark">
+                                       class="text-decoration-none" style="color: #1e3a8a;">
                                         Priority
                                         {% if current_sort == 'priority' %}
                                             {% if current_order == 'asc' %}
-                                                <i class="bi bi-arrow-up"></i>
+                                                <i class="bi bi-caret-up-fill"></i>
                                             {% else %}
-                                                <i class="bi bi-arrow-down"></i>
+                                                <i class="bi bi-caret-down-fill"></i>
                                             {% endif %}
                                         {% endif %}
                                     </a>
                                 </th>
                                 <th>
                                     <a href="?sort=status&order={% if current_sort == 'status' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&per_page={{ per_page }}" 
-                                       class="text-decoration-none text-dark">
+                                       class="text-decoration-none" style="color: #1e3a8a;">
                                         Status
                                         {% if current_sort == 'status' %}
                                             {% if current_order == 'asc' %}
-                                                <i class="bi bi-arrow-up"></i>
+                                                <i class="bi bi-caret-up-fill"></i>
                                             {% else %}
-                                                <i class="bi bi-arrow-down"></i>
+                                                <i class="bi bi-caret-down-fill"></i>
                                             {% endif %}
                                         {% endif %}
                                     </a>
                                 </th>
                                 <th>
                                     <a href="?sort=date_created&order={% if current_sort == 'date_created' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}&per_page={{ per_page }}" 
-                                       class="text-decoration-none text-dark">
+                                       class="text-decoration-none" style="color: #1e3a8a;">
                                         Date Created
                                         {% if current_sort == 'date_created' %}
                                             {% if current_order == 'asc' %}
-                                                <i class="bi bi-arrow-up"></i>
+                                                <i class="bi bi-caret-up-fill"></i>
                                             {% else %}
-                                                <i class="bi bi-arrow-down"></i>
+                                                <i class="bi bi-caret-down-fill"></i>
                                             {% endif %}
                                         {% endif %}
                                     </a>
@@ -186,7 +183,7 @@
                         </thead>
                         <tbody>
                             {% for todo in page_obj %}
-                            <tr {% if todo.is_overdue %}class="table-warning"{% endif %}>
+                            <tr>
                                 <td>
                                     <a href="{% url 'components:todo_detail' todo.pk %}" class="text-decoration-none">
                                         <strong>{{ todo.item }}</strong>
@@ -261,18 +258,16 @@
 <div class="row mt-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">
+            <div class="card-body">
+                <h5 class="mb-3">
                     <i class="bi bi-check-circle"></i> Completed Todos ({{ total_completed_todos }})
                     {% if total_completed_todos > 10 %}
                         <small class="ms-2">Showing last 10</small>
                     {% endif %}
                 </h5>
-            </div>
-            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
+                    <table class="table table-dark table-striped table-hover">
+                        <thead class="table-secondary">
                             <tr>
                                 <th>Item</th>
                                 <th>Priority</th>
@@ -283,7 +278,7 @@
                         </thead>
                         <tbody>
                             {% for todo in completed_todos %}
-                            <tr class="table-success">
+                            <tr>
                                 <td>
                                     <a href="{% url 'components:todo_detail' todo.pk %}" class="text-decoration-none">
                                         <strong>{{ todo.item }}</strong>

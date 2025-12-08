@@ -12,7 +12,23 @@ from .forms import ComponentForm, ComponentSupplierForm, TodoForm, PurchaseOrder
 def component_list(request):
     """Display list of all components with search and filtering."""
     search_query = request.GET.get('search', '')
-    status_filter = request.GET.get('status', '')
+    
+    # Check if any filter parameters exist in the request
+    has_filter_params = any(key in request.GET for key in ['in_stock', 'low_stock', 'out_of_stock'])
+    
+    # Default all filters to checked if no filter params exist
+    if has_filter_params:
+        status_filters = []
+        if request.GET.get('in_stock'):
+            status_filters.append('in_stock')
+        if request.GET.get('low_stock'):
+            status_filters.append('low_stock')
+        if request.GET.get('out_of_stock'):
+            status_filters.append('out_of_stock')
+    else:
+        # Default state: all checked
+        status_filters = ['in_stock', 'low_stock', 'out_of_stock']
+    
     sort_by = request.GET.get('sort', 'description')
     order = request.GET.get('order', 'asc')
     per_page = request.GET.get('per_page', '20')
@@ -46,19 +62,19 @@ def component_list(request):
             Q(cost__icontains=search_query)
         )
     
-    # Apply status filter
-    if status_filter == 'out_of_stock':
-        components = components.filter(quantity_in_stock=0)
-    elif status_filter == 'low_stock':
-        components = components.filter(
-            quantity_in_stock__gt=0,
-            quantity_in_stock__lte=F('minimum_stock_level')
-        )
-    elif status_filter == 'in_stock':
-        components = components.filter(quantity_in_stock__gt=F('minimum_stock_level'))
+    # Apply status filters (multiple checkboxes)
+    if status_filters:
+        filter_q = Q()
+        if 'out_of_stock' in status_filters:
+            filter_q |= Q(quantity_in_stock=0)
+        if 'low_stock' in status_filters:
+            filter_q |= Q(quantity_in_stock__gt=0, quantity_in_stock__lte=F('minimum_stock_level'))
+        if 'in_stock' in status_filters:
+            filter_q |= Q(quantity_in_stock__gt=F('minimum_stock_level'))
+        components = components.filter(filter_q)
     
     # Apply sorting
-    valid_sort_fields = ['description', 'value', 'manufacturer', 'supplier_name', 'supplier_part_number', 'cost', 'quantity_in_stock', 'location', 'date_added']
+    valid_sort_fields = ['description', 'value', 'manufacturer', 'package_type', 'supplier_part_number', 'cost', 'quantity_in_stock', 'location', 'date_added']
     if sort_by in valid_sort_fields:
         if order == 'desc':
             components = components.order_by(f'-{sort_by}')
@@ -75,7 +91,7 @@ def component_list(request):
     context = {
         'page_obj': page_obj,
         'search_query': search_query,
-        'status_filter': status_filter,
+        'status_filters': status_filters,
         'current_sort': sort_by,
         'current_order': order,
         'per_page': per_page,

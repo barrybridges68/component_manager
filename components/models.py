@@ -120,6 +120,13 @@ class Component(models.Model):
         help_text="Storage location (e.g., 'Drawer A1', 'Shelf B2')"
     )
     
+    package_type = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Package type (e.g., 'SMD 0805', 'Through-hole', 'DIP-14', 'SOIC-8')"
+    )
+    
     notes = models.TextField(
         blank=True,
         null=True,

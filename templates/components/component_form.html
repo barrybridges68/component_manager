@@ -159,6 +159,111 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label for="{{ form.package_type.id_for_label }}" class="form-label">
+                            {{ form.package_type.label }}
+                        </label>
+                        {{ form.package_type }}
+                        <datalist id="package-type-suggestions">
+                            <!-- SMD Resistors & Capacitors -->
+                            <option value="SMD 0201">SMD 0201 (0.6mm × 0.3mm)</option>
+                            <option value="SMD 0402">SMD 0402 (1.0mm × 0.5mm)</option>
+                            <option value="SMD 0603">SMD 0603 (1.6mm × 0.8mm)</option>
+                            <option value="SMD 0805">SMD 0805 (2.0mm × 1.25mm)</option>
+                            <option value="SMD 1206">SMD 1206 (3.2mm × 1.6mm)</option>
+                            <option value="SMD 1210">SMD 1210 (3.2mm × 2.5mm)</option>
+                            <option value="SMD 1812">SMD 1812 (4.5mm × 3.2mm)</option>
+                            <option value="SMD 2010">SMD 2010 (5.0mm × 2.5mm)</option>
+                            <option value="SMD 2512">SMD 2512 (6.4mm × 3.2mm)</option>
+                            
+                            <!-- Through-hole -->
+                            <option value="Through-hole">Through-hole (Generic)</option>
+                            <option value="Axial">Axial (Through-hole)</option>
+                            <option value="Radial">Radial (Through-hole)</option>
+                            
+                            <!-- IC Packages - DIP -->
+                            <option value="DIP-8">DIP-8 (8-pin)</option>
+                            <option value="DIP-14">DIP-14 (14-pin)</option>
+                            <option value="DIP-16">DIP-16 (16-pin)</option>
+                            <option value="DIP-20">DIP-20 (20-pin)</option>
+                            <option value="DIP-24">DIP-24 (24-pin)</option>
+                            <option value="DIP-28">DIP-28 (28-pin)</option>
+                            <option value="DIP-40">DIP-40 (40-pin)</option>
+                            
+                            <!-- IC Packages - SOIC -->
+                            <option value="SOIC-8">SOIC-8 (8-pin)</option>
+                            <option value="SOIC-14">SOIC-14 (14-pin)</option>
+                            <option value="SOIC-16">SOIC-16 (16-pin)</option>
+                            <option value="SOIC-20">SOIC-20 (20-pin)</option>
+                            <option value="SOIC-24">SOIC-24 (24-pin)</option>
+                            <option value="SOIC-28">SOIC-28 (28-pin)</option>
+                            
+                            <!-- IC Packages - TSSOP -->
+                            <option value="TSSOP-8">TSSOP-8 (8-pin)</option>
+                            <option value="TSSOP-14">TSSOP-14 (14-pin)</option>
+                            <option value="TSSOP-16">TSSOP-16 (16-pin)</option>
+                            <option value="TSSOP-20">TSSOP-20 (20-pin)</option>
+                            <option value="TSSOP-24">TSSOP-24 (24-pin)</option>
+                            <option value="TSSOP-28">TSSOP-28 (28-pin)</option>
+                            
+                            <!-- IC Packages - QFP -->
+                            <option value="QFP-32">QFP-32 (32-pin)</option>
+                            <option value="QFP-44">QFP-44 (44-pin)</option>
+                            <option value="QFP-48">QFP-48 (48-pin)</option>
+                            <option value="QFP-64">QFP-64 (64-pin)</option>
+                            <option value="QFP-100">QFP-100 (100-pin)</option>
+                            <option value="LQFP-32">LQFP-32 (32-pin)</option>
+                            <option value="LQFP-48">LQFP-48 (48-pin)</option>
+                            <option value="LQFP-64">LQFP-64 (64-pin)</option>
+                            <option value="LQFP-100">LQFP-100 (100-pin)</option>
+                            
+                            <!-- IC Packages - QFN -->
+                            <option value="QFN-16">QFN-16 (16-pin)</option>
+                            <option value="QFN-20">QFN-20 (20-pin)</option>
+                            <option value="QFN-24">QFN-24 (24-pin)</option>
+                            <option value="QFN-32">QFN-32 (32-pin)</option>
+                            <option value="QFN-48">QFN-48 (48-pin)</option>
+                            
+                            <!-- IC Packages - BGA -->
+                            <option value="BGA-64">BGA-64 (64-ball)</option>
+                            <option value="BGA-100">BGA-100 (100-ball)</option>
+                            <option value="BGA-144">BGA-144 (144-ball)</option>
+                            <option value="BGA-256">BGA-256 (256-ball)</option>
+                            
+                            <!-- IC Packages - Other SMD -->
+                            <option value="SOT-23">SOT-23 (3-pin)</option>
+                            <option value="SOT-23-5">SOT-23-5 (5-pin)</option>
+                            <option value="SOT-23-6">SOT-23-6 (6-pin)</option>
+                            <option value="SOT-89">SOT-89 (3-pin)</option>
+                            <option value="SOT-223">SOT-223 (4-pin)</option>
+                            <option value="TO-252 (DPAK)">TO-252 (DPAK)</option>
+                            <option value="TO-263 (D2PAK)">TO-263 (D2PAK)</option>
+                            
+                            <!-- IC Packages - Other Through-hole -->
+                            <option value="TO-92">TO-92 (3-pin)</option>
+                            <option value="TO-220">TO-220 (3-pin)</option>
+                            <option value="TO-247">TO-247 (3-pin)</option>
+                            
+                            <!-- Connectors -->
+                            <option value="Pin Header">Pin Header</option>
+                            <option value="Socket">Socket</option>
+                            <option value="JST">JST Connector</option>
+                            
+                            <!-- LEDs -->
+                            <option value="LED 3mm">LED 3mm</option>
+                            <option value="LED 5mm">LED 5mm</option>
+                            <option value="LED SMD 0603">LED SMD 0603</option>
+                            <option value="LED SMD 0805">LED SMD 0805</option>
+                            <option value="LED SMD 1206">LED SMD 1206</option>
+                        </datalist>
+                        {% if form.package_type.help_text %}
+                            <div class="form-text">{{ form.package_type.help_text }}</div>
+                        {% endif %}
+                        {% if form.package_type.errors %}
+                            <div class="text-danger">{{ form.package_type.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="{{ form.notes.id_for_label }}" class="form-label">
                             {{ form.notes.label }}
                         </label>

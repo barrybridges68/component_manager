@@ -18,6 +18,7 @@ class ComponentForm(forms.ModelForm):
             'quantity_in_stock',
             'minimum_stock_level',
             'location',
+            'package_type',
             'notes'
         ]
         widgets = {
@@ -69,6 +70,12 @@ class ComponentForm(forms.ModelForm):
             'location': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'e.g., Drawer A1, Shelf B2'
+            }),
+            'package_type': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., SMD 0805, Through-hole, DIP-14, SOIC-8',
+                'list': 'package-type-suggestions',
+                'autocomplete': 'off'
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',

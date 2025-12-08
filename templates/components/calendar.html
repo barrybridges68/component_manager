@@ -476,37 +476,16 @@ function showDayEvents(dateStr, dateDisplay) {
     const titleEl = document.getElementById('modalDayTitle');
     const containerEl = document.getElementById('modalEventsContainer');
     
-    // Find the day cell
-    const dayCells = document.querySelectorAll('.calendar-day-cell');
+    // Find the day cell - check both month and week view cells
+    const allCells = [...document.querySelectorAll('.calendar-day-cell'), ...document.querySelectorAll('.week-day-cell')];
     let eventData = [];
     
-    for (let cell of dayCells) {
-        const dataContainer = cell.querySelector('.day-events-data');
-        if (dataContainer) {
-            const events = dataContainer.querySelectorAll('.event-data');
-            if (events.length > 0) {
-                const firstEvent = events[0];
-                const cellDate = cell.querySelector('.day-number');
-                if (dataContainer.parentElement === cell) {
-                    events.forEach(event => {
-                        eventData.push({
-                            id: event.dataset.id,
-                            title: event.dataset.title,
-                            priority: event.dataset.priority,
-                            completed: event.dataset.completed === 'True',
-                            time: event.dataset.time,
-                            location: event.dataset.location
-                        });
-                    });
-                    break;
-                }
-            }
-        }
+    for (let cell of allCells) {
+        // Check if this cell's onclick contains our date string
         if (cell.onclick && cell.onclick.toString().includes(dateStr)) {
             const dataContainer = cell.querySelector('.day-events-data');
             if (dataContainer) {
                 const events = dataContainer.querySelectorAll('.event-data');
-                eventData = [];
                 events.forEach(event => {
                     eventData.push({
                         id: event.dataset.id,

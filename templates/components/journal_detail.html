@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ entry.title }} - Component Stock Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ entry.title }}</h1>
+            <div>
+                <a href="{% url 'components:journal_update' entry.pk %}" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+                <a href="{% url 'components:journal_delete' entry.pk %}" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Delete
+                </a>
+                <a href="{% url 'components:journal_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Journal
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="text-muted">
+                        <i class="bi bi-calendar3"></i> Created: {{ entry.created_at|date:"F d, Y \a\t g:i A" }}
+                    </div>
+                    {% if entry.updated_at != entry.created_at %}
+                    <div class="text-muted">
+                        <i class="bi bi-pencil"></i> Last edited: {{ entry.updated_at|date:"F d, Y \a\t g:i A" }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if entry.tags.all %}
+                    <div class="mt-3">
+                        {% for tag in entry.tags.all %}
+                        <span class="badge bg-primary me-1">
+                            <i class="bi bi-tag-fill"></i> {{ tag.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="journal-content" style="line-height: 1.8; font-size: 1.05rem;">
+                    {{ entry.content|linebreaks }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

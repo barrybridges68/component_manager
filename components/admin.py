@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Component, Event
+from .models import Component, Event, Tag, JournalEntry
 
 
 @admin.register(Component)
@@ -114,3 +114,20 @@ class EventAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    """Admin interface for Tag model."""
+    list_display = ['name']
+    search_fields = ['name']
+
+
+@admin.register(JournalEntry)
+class JournalEntryAdmin(admin.ModelAdmin):
+    """Admin interface for JournalEntry model."""
+    list_display = ['title', 'created_at', 'updated_at']
+    list_filter = ['created_at', 'updated_at', 'tags']
+    search_fields = ['title', 'content']
+    filter_horizontal = ['tags']
+    readonly_fields = ['created_at', 'updated_at']

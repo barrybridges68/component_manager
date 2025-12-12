@@ -5,7 +5,7 @@ from django.db.models import Q, F, Sum, Value, Case, When, IntegerField
 from django.db.models.functions import Coalesce
 from django.db import models
 from django.http import JsonResponse
-from .models import Component, ComponentDescription, ComponentManufacturer, ComponentSupplier, Todo, PurchaseOrder, PurchaseOrderItem, Event
+from .models import Component, ComponentDescription, ComponentManufacturer, ComponentSupplier, Todo, PurchaseOrder, PurchaseOrderItem, Event, JournalEntry
 from .forms import ComponentForm, ComponentSupplierForm, TodoForm, PurchaseOrderForm, PurchaseOrderItemForm, AddToPurchaseOrderForm, PurchaseOrderItemEditForm, EventForm
 
 
@@ -1019,3 +1019,181 @@ def event_delete(request, pk):
     }
     
     return render(request, 'components/event_confirm_delete.html', context)
+
+
+def journal_list(request):
+    """Display journal entries with timeline."""
+    search_query = request.GET.get('search', '')
+    tag_filter = request.GET.get('tag', '')
+    
+    entries = JournalEntry.objects.all()
+    
+    # Apply tag filter
+    if tag_filter:
+        entries = entries.filter(tags__name=tag_filter)
+    
+    # Apply search filter
+    if search_query:
+        entries = entries.filter(
+            Q(title__icontains=search_query) | 
+            Q(content__icontains=search_query) |
+            Q(tags__name__icontains=search_query)
+        ).distinct()
+    
+    # Order by most recent first
+    entries = entries.order_by('-created_at')
+    
+    # Pagination
+    paginator = Paginator(entries, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'tag_filter': tag_filter,
+    }
+    return render(request, 'components/journal_list.html', context)
+
+
+def journal_create(request):
+    """Create a new journal entry."""
+    from django import forms
+    from .models import Tag
+    
+    class JournalEntryForm(forms.ModelForm):
+        tags_input = forms.CharField(
+            required=False,
+            widget=forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter tags separated by commas (e.g., work, ideas, personal)'
+            }),
+            label='Tags',
+            help_text='Separate tags with commas'
+        )
+        
+        class Meta:
+            model = JournalEntry
+            fields = ['title', 'content']
+            widgets = {
+                'title': forms.TextInput(attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Entry title...'
+                }),
+                'content': forms.Textarea(attrs={
+                    'class': 'form-control',
+                    'rows': 10,
+                    'placeholder': 'Write your journal entry here...'
+                }),
+            }
+    
+    if request.method == 'POST':
+        form = JournalEntryForm(request.POST)
+        if form.is_valid():
+            entry = form.save()
+            
+            # Process tags
+            tags_input = form.cleaned_data.get('tags_input', '')
+            if tags_input:
+                tag_names = [t.strip() for t in tags_input.split(',') if t.strip()]
+                for tag_name in tag_names:
+                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    entry.tags.add(tag)
+            
+            messages.success(request, 'Journal entry created successfully!')
+            return redirect('components:journal_list')
+    else:
+        form = JournalEntryForm()
+    
+    context = {
+        'form': form,
+        'title': 'New Journal Entry'
+    }
+    return render(request, 'components/journal_form.html', context)
+
+
+def journal_detail(request, pk):
+    """Display a single journal entry."""
+    entry = get_object_or_404(JournalEntry, pk=pk)
+    
+    context = {
+        'entry': entry,
+    }
+    return render(request, 'components/journal_detail.html', context)
+
+
+def journal_update(request, pk):
+    """Update a journal entry."""
+    from django import forms
+    from .models import Tag
+    
+    entry = get_object_or_404(JournalEntry, pk=pk)
+    
+    class JournalEntryForm(forms.ModelForm):
+        tags_input = forms.CharField(
+            required=False,
+            widget=forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter tags separated by commas (e.g., work, ideas, personal)'
+            }),
+            label='Tags',
+            help_text='Separate tags with commas',
+            initial=', '.join([tag.name for tag in entry.tags.all()])
+        )
+        
+        class Meta:
+            model = JournalEntry
+            fields = ['title', 'content']
+            widgets = {
+                'title': forms.TextInput(attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Entry title...'
+                }),
+                'content': forms.Textarea(attrs={
+                    'class': 'form-control',
+                    'rows': 10,
+                    'placeholder': 'Write your journal entry here...'
+                }),
+            }
+    
+    if request.method == 'POST':
+        form = JournalEntryForm(request.POST, instance=entry)
+        if form.is_valid():
+            entry = form.save()
+            
+            # Process tags
+            entry.tags.clear()
+            tags_input = form.cleaned_data.get('tags_input', '')
+            if tags_input:
+                tag_names = [t.strip() for t in tags_input.split(',') if t.strip()]
+                for tag_name in tag_names:
+                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    entry.tags.add(tag)
+            
+            messages.success(request, 'Journal entry updated successfully!')
+            return redirect('components:journal_detail', pk=entry.pk)
+    else:
+        form = JournalEntryForm(instance=entry)
+    
+    context = {
+        'form': form,
+        'entry': entry,
+        'title': f'Edit {entry.title}'
+    }
+    return render(request, 'components/journal_form.html', context)
+
+
+def journal_delete(request, pk):
+    """Delete a journal entry."""
+    entry = get_object_or_404(JournalEntry, pk=pk)
+    
+    if request.method == 'POST':
+        entry_title = entry.title
+        entry.delete()
+        messages.success(request, f'Journal entry "{entry_title}" deleted successfully!')
+        return redirect('components:journal_list')
+    
+    context = {
+        'entry': entry
+    }
+    return render(request, 'components/journal_confirm_delete.html', context)

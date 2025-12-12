@@ -652,3 +652,50 @@ class Event(models.Model):
             'other': 'bg-dark'
         }
         return type_classes.get(self.event_type, 'bg-dark')
+
+
+class Tag(models.Model):
+    """Model for tags that can be applied to journal entries."""
+    
+    name = models.CharField(
+        max_length=50,
+        unique=True,
+        help_text="Tag name"
+    )
+    
+    class Meta:
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
+
+class JournalEntry(models.Model):
+    """Model for journal entries with automatic timestamps."""
+    
+    title = models.CharField(
+        max_length=200,
+        help_text="Title or subject of the journal entry"
+    )
+    
+    content = models.TextField(
+        help_text="Journal entry content"
+    )
+    
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name='journal_entries',
+        help_text="Tags for categorizing this entry"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Journal Entry'
+        verbose_name_plural = 'Journal Entries'
+    
+    def __str__(self):
+        return f"{self.title} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"

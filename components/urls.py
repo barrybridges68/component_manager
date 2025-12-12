@@ -46,6 +46,13 @@ urlpatterns = [
     path('events/<int:pk>/delete/', views.event_delete, name='event_delete'),
     path('events/<int:pk>/toggle-complete/', views.event_toggle_complete, name='event_toggle_complete'),
     
+    # Journal URLs
+    path('journal/', views.journal_list, name='journal_list'),
+    path('journal/<int:pk>/', views.journal_detail, name='journal_detail'),
+    path('journal/add/', views.journal_create, name='journal_create'),
+    path('journal/<int:pk>/edit/', views.journal_update, name='journal_update'),
+    path('journal/<int:pk>/delete/', views.journal_delete, name='journal_delete'),
+    
     # API endpoints
     path('api/description-autocomplete/', views.description_autocomplete, name='description_autocomplete'),
     path('api/manufacturer-autocomplete/', views.manufacturer_autocomplete, name='manufacturer_autocomplete'),

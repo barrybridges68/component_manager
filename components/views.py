@@ -108,7 +108,7 @@ def component_detail(request, pk):
 def component_create(request):
     """Create a new component."""
     if request.method == 'POST':
-        form = ComponentForm(request.POST)
+        form = ComponentForm(request.POST, request.FILES)
         if form.is_valid():
             component = form.save()
             messages.success(request, f'Component "{component}" has been created successfully.')
@@ -127,7 +127,24 @@ def component_update(request, pk):
     component = get_object_or_404(Component, pk=pk)
     
     if request.method == 'POST':
-        form = ComponentForm(request.POST, instance=component)
+        # Check if user wants to remove photo or datasheet
+        if request.POST.get('remove_photo') == 'true':
+            if component.photo:
+                component.photo.delete(save=False)
+                component.photo = None
+                component.save()
+                messages.success(request, 'Photo has been removed.')
+            return redirect('components:component_update', pk=component.pk)
+        
+        if request.POST.get('remove_datasheet') == 'true':
+            if component.datasheet:
+                component.datasheet.delete(save=False)
+                component.datasheet = None
+                component.save()
+                messages.success(request, 'Datasheet has been removed.')
+            return redirect('components:component_update', pk=component.pk)
+        
+        form = ComponentForm(request.POST, request.FILES, instance=component)
         if form.is_valid():
             component = form.save()
             messages.success(request, f'Component "{component}" has been updated successfully.')

@@ -18,7 +18,7 @@
     <div class="col-md-8 mx-auto">
         <div class="card">
             <div class="card-body">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     
                     <div class="row">
@@ -264,6 +264,56 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label for="{{ form.photo.id_for_label }}" class="form-label">
+                            {{ form.photo.label }}
+                        </label>
+                        {{ form.photo }}
+                        {% if component.photo %}
+                            <div class="mt-2">
+                                <img src="{{ component.photo.url }}" alt="{{ component }}" style="max-width: 200px; max-height: 200px;" class="img-thumbnail">
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="removePhoto()">
+                                        <i class="bi bi-trash"></i> Remove Photo
+                                    </button>
+                                </div>
+                                <div class="form-text">Current photo (select a new file to replace or click remove)</div>
+                            </div>
+                        {% endif %}
+                        {% if form.photo.help_text %}
+                            <div class="form-text">{{ form.photo.help_text }}</div>
+                        {% endif %}
+                        {% if form.photo.errors %}
+                            <div class="text-danger">{{ form.photo.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <input type="hidden" name="remove_photo" id="remove_photo" value="false">
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.datasheet.id_for_label }}" class="form-label">
+                            {{ form.datasheet.label }}
+                        </label>
+                        {{ form.datasheet }}
+                        {% if component.datasheet %}
+                            <div class="mt-2">
+                                <a href="{{ component.datasheet.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-file-earmark-pdf"></i> View Current Datasheet
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm ms-2" onclick="removeDatasheet()">
+                                    <i class="bi bi-trash"></i> Remove Datasheet
+                                </button>
+                                <div class="form-text">Current datasheet: {{ component.datasheet.name }} (select a new file to replace or click remove)</div>
+                            </div>
+                        {% endif %}
+                        {% if form.datasheet.help_text %}
+                            <div class="form-text">{{ form.datasheet.help_text }}</div>
+                        {% endif %}
+                        {% if form.datasheet.errors %}
+                            <div class="text-danger">{{ form.datasheet.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <input type="hidden" name="remove_datasheet" id="remove_datasheet" value="false">
+                    
+                    <div class="mb-3">
                         <label for="{{ form.notes.id_for_label }}" class="form-label">
                             {{ form.notes.label }}
                         </label>
@@ -373,6 +423,22 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error(`Error loading ${fieldType} suggestions:`, error);
             });
+    }
+    
+    // Remove photo function
+    window.removePhoto = function() {
+        if (confirm('Are you sure you want to remove the photo?')) {
+            document.getElementById('remove_photo').value = 'true';
+            document.querySelector('form').submit();
+        }
+    }
+    
+    // Remove datasheet function
+    window.removeDatasheet = function() {
+        if (confirm('Are you sure you want to remove the datasheet?')) {
+            document.getElementById('remove_datasheet').value = 'true';
+            document.querySelector('form').submit();
+        }
     }
 });
 </script>

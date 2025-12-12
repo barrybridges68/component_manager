@@ -29,6 +29,20 @@
                 <h5 class="mb-0">Component Details</h5>
             </div>
             <div class="card-body">
+                {% if component.photo %}
+                <div class="row mb-3">
+                    <div class="col-12 text-center">
+                        <img src="{{ component.photo.url }}" 
+                             alt="{{ component }}" 
+                             class="img-fluid" 
+                             style="max-width: 400px; max-height: 400px; border-radius: 8px; cursor: pointer;" 
+                             data-bs-toggle="modal" 
+                             data-bs-target="#photoModal"
+                             title="Click to view full size">
+                    </div>
+                </div>
+                {% endif %}
+                
                 <div class="row mb-3">
                     <div class="col-sm-3"><strong>Description:</strong></div>
                     <div class="col-sm-9">{{ component.description }}</div>
@@ -84,6 +98,17 @@
                 <div class="row mb-3">
                     <div class="col-sm-3"><strong>Location:</strong></div>
                     <div class="col-sm-9">{{ component.location }}</div>
+                </div>
+                {% endif %}
+                
+                {% if component.datasheet %}
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Datasheet:</strong></div>
+                    <div class="col-sm-9">
+                        <a href="{{ component.datasheet.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-file-earmark-pdf"></i> View Datasheet
+                        </a>
+                    </div>
                 </div>
                 {% endif %}
                 
@@ -159,4 +184,22 @@
         </div>
     </div>
 </div>
+
+{% if component.photo %}
+<!-- Photo Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="photoModalLabel">{{ component }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="{{ component.photo.url }}" alt="{{ component }}" class="img-fluid" style="max-width: 100%; max-height: 80vh;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}

@@ -1,6 +1,24 @@
 from django.db import models
 from django.utils import timezone
 from django.db.models import Case, When, Value, IntegerField
+import os
+from datetime import datetime
+
+
+def component_photo_path(instance, filename):
+    """Generate unique path for component photos with timestamp."""
+    ext = os.path.splitext(filename)[1]
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    new_filename = f"{instance.description}_{timestamp}{ext}"
+    return os.path.join('component_photos', new_filename)
+
+
+def component_datasheet_path(instance, filename):
+    """Generate unique path for component datasheets with timestamp."""
+    ext = os.path.splitext(filename)[1]
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    new_filename = f"{instance.description}_{timestamp}{ext}"
+    return os.path.join('component_datasheets', new_filename)
 
 
 class ComponentDescription(models.Model):
@@ -127,6 +145,20 @@ class Component(models.Model):
         help_text="Package type (e.g., 'SMD 0805', 'Through-hole', 'DIP-14', 'SOIC-8')"
     )
     
+    photo = models.ImageField(
+        upload_to=component_photo_path,
+        blank=True,
+        null=True,
+        help_text="Photo of the component"
+    )
+    
+    datasheet = models.FileField(
+        upload_to=component_datasheet_path,
+        blank=True,
+        null=True,
+        help_text="Datasheet PDF for the component"
+    )
+    
     notes = models.TextField(
         blank=True,
         null=True,
@@ -147,6 +179,19 @@ class Component(models.Model):
         return self.description
     
     def save(self, *args, **kwargs):
+        # If updating, delete old files if new ones are uploaded
+        if self.pk:
+            try:
+                old_instance = Component.objects.get(pk=self.pk)
+                if old_instance.photo and self.photo and old_instance.photo != self.photo:
+                    if os.path.isfile(old_instance.photo.path):
+                        os.remove(old_instance.photo.path)
+                if old_instance.datasheet and self.datasheet and old_instance.datasheet != self.datasheet:
+                    if os.path.isfile(old_instance.datasheet.path):
+                        os.remove(old_instance.datasheet.path)
+            except Component.DoesNotExist:
+                pass
+        
         # Update or create ComponentDescription for autocomplete
         if self.description:
             description_obj, created = ComponentDescription.objects.get_or_create(
@@ -178,6 +223,20 @@ class Component(models.Model):
                 supplier_obj.save()
         
         super().save(*args, **kwargs)
+    
+    def delete(self, *args, **kwargs):
+        """Delete component and associated files."""
+        # Delete photo file if it exists
+        if self.photo:
+            if os.path.isfile(self.photo.path):
+                os.remove(self.photo.path)
+        
+        # Delete datasheet file if it exists
+        if self.datasheet:
+            if os.path.isfile(self.datasheet.path):
+                os.remove(self.datasheet.path)
+        
+        super().delete(*args, **kwargs)
     
     @property
     def is_low_stock(self):

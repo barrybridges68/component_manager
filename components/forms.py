@@ -19,6 +19,8 @@ class ComponentForm(forms.ModelForm):
             'minimum_stock_level',
             'location',
             'package_type',
+            'photo',
+            'datasheet',
             'notes'
         ]
         widgets = {
@@ -76,6 +78,14 @@ class ComponentForm(forms.ModelForm):
                 'placeholder': 'e.g., SMD 0805, Through-hole, DIP-14, SOIC-8',
                 'list': 'package-type-suggestions',
                 'autocomplete': 'off'
+            }),
+            'photo': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+            'datasheet': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'application/pdf,.pdf'
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',

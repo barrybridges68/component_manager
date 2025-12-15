@@ -4,7 +4,8 @@ from django.core.paginator import Paginator
 from django.db.models import Q, F, Sum, Value, Case, When, IntegerField
 from django.db.models.functions import Coalesce
 from django.db import models
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+import csv
 from .models import Component, ComponentDescription, ComponentManufacturer, ComponentSupplier, Todo, PurchaseOrder, PurchaseOrderItem, Event, JournalEntry
 from .forms import ComponentForm, ComponentSupplierForm, TodoForm, PurchaseOrderForm, PurchaseOrderItemForm, AddToPurchaseOrderForm, PurchaseOrderItemEditForm, EventForm
 
@@ -170,6 +171,130 @@ def component_delete(request, pk):
         return redirect('components:component_list')
     
     return render(request, 'components/component_confirm_delete.html', {'component': component})
+
+
+def export_components(request):
+    """Export all components to CSV."""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="components_export.csv"'
+    
+    writer = csv.writer(response)
+    # Write header
+    writer.writerow([
+        'Description',
+        'Value',
+        'Package Type',
+        'Manufacturer',
+        'Supplier Name',
+        'Supplier Part Number',
+        'Cost',
+        'Quantity in Stock',
+        'Minimum Stock Level',
+        'Location',
+        'Notes',
+        'Date Added',
+        'Date Modified'
+    ])
+    
+    # Write data
+    components = Component.objects.all().order_by('description')
+    for component in components:
+        writer.writerow([
+            component.description or '',
+            component.value or '',
+            component.package_type or '',
+            component.manufacturer or '',
+            component.supplier_name or '',
+            component.supplier_part_number or '',
+            component.cost or '',
+            component.quantity_in_stock or 0,
+            component.minimum_stock_level or 0,
+            component.location or '',
+            component.notes or '',
+            component.date_added.strftime('%Y-%m-%d %H:%M:%S') if component.date_added else '',
+            component.date_modified.strftime('%Y-%m-%d %H:%M:%S') if component.date_modified else ''
+        ])
+    
+    return response
+
+
+def import_components(request):
+    """Import components from CSV."""
+    if request.method == 'POST' and request.FILES.get('csv_file'):
+        csv_file = request.FILES['csv_file']
+        
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Please upload a CSV file.')
+            return redirect('components:component_list')
+        
+        try:
+            decoded_file = csv_file.read().decode('utf-8').splitlines()
+            reader = csv.DictReader(decoded_file)
+            
+            imported_count = 0
+            updated_count = 0
+            
+            for row in reader:
+                # Check if component exists by description
+                description = row.get('Description', '').strip()
+                if not description:
+                    continue
+                
+                # Parse numeric values
+                try:
+                    cost = float(row.get('Cost', 0) or 0)
+                except ValueError:
+                    cost = 0
+                
+                try:
+                    quantity = int(row.get('Quantity in Stock', 0) or 0)
+                except ValueError:
+                    quantity = 0
+                
+                try:
+                    min_stock = int(row.get('Minimum Stock Level', 0) or 0)
+                except ValueError:
+                    min_stock = 0
+                
+                # Check if component already exists
+                existing = Component.objects.filter(description=description).first()
+                
+                component_data = {
+                    'description': description,
+                    'value': row.get('Value', '').strip(),
+                    'package_type': row.get('Package Type', '').strip(),
+                    'manufacturer': row.get('Manufacturer', '').strip(),
+                    'supplier_name': row.get('Supplier Name', '').strip(),
+                    'supplier_part_number': row.get('Supplier Part Number', '').strip(),
+                    'cost': cost,
+                    'quantity_in_stock': quantity,
+                    'minimum_stock_level': min_stock,
+                    'location': row.get('Location', '').strip(),
+                    'notes': row.get('Notes', '').strip(),
+                }
+                
+                if existing:
+                    # Update existing component
+                    for key, value in component_data.items():
+                        setattr(existing, key, value)
+                    existing.save()
+                    updated_count += 1
+                else:
+                    # Create new component
+                    Component.objects.create(**component_data)
+                    imported_count += 1
+            
+            if imported_count > 0 or updated_count > 0:
+                messages.success(request, f'Import successful: {imported_count} new component(s) added, {updated_count} component(s) updated.')
+            else:
+                messages.warning(request, 'No components were imported.')
+                
+        except Exception as e:
+            messages.error(request, f'Error importing CSV: {str(e)}')
+        
+        return redirect('components:component_list')
+    
+    return redirect('components:component_list')
 
 
 def dashboard(request):

@@ -10,6 +10,8 @@ urlpatterns = [
     path('components/add/', views.component_create, name='component_create'),
     path('components/<int:pk>/edit/', views.component_update, name='component_update'),
     path('components/<int:pk>/delete/', views.component_delete, name='component_delete'),
+    path('components/export/', views.export_components, name='export_components'),
+    path('components/import/', views.import_components, name='import_components'),
     
     # Supplier URLs
     path('suppliers/', views.supplier_list, name='supplier_list'),
